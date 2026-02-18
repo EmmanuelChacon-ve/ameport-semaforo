@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiPlus, FiLoader } from 'react-icons/fi';
-import { fetchDepartmentsMetadata } from '../../services/api';
+import { FiX, FiPlus, FiLoader, FiCheck } from 'react-icons/fi';
+import { fetchDepartmentsMetadata, addDepartmentCategory } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import './CreateTaskModal.css';
 
@@ -10,11 +10,12 @@ const MONTHS = [
 ];
 
 export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepartment }) {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const isAdmin = user?.role === 'admin';
     const isCoordinator = user?.role === 'coordinator';
 
     const [departments, setDepartments] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         department: '',
@@ -25,25 +26,45 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Load departments for the dropdown (only if no fixedDepartment)
+    // New category creation state
+    const [showNewCategory, setShowNewCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [creatingCategory, setCreatingCategory] = useState(false);
+
+    // Load departments for the dropdown
     useEffect(() => {
-        if (!isOpen || fixedDepartment) return;
+        if (!isOpen) return;
         fetchDepartmentsMetadata()
             .then((depts) => {
                 setDepartments(depts);
-                if (isCoordinator && user?.departments?.length > 0) {
-                    setFormData((prev) => ({ ...prev, department: user.departments[0] }));
-                } else if (depts.length > 0 && !formData.department) {
-                    setFormData((prev) => ({ ...prev, department: depts[0].name }));
+                if (!fixedDepartment) {
+                    if (isCoordinator && user?.departments?.length > 0) {
+                        setFormData((prev) => ({ ...prev, department: user.departments[0] }));
+                    } else if (depts.length > 0 && !formData.department) {
+                        setFormData((prev) => ({ ...prev, department: depts[0].name }));
+                    }
                 }
             })
             .catch(() => setError('Error cargando departamentos'));
     }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Update categories when department changes
+    useEffect(() => {
+        const deptName = fixedDepartment || formData.department;
+        if (!deptName || departments.length === 0) {
+            setCategories([]);
+            return;
+        }
+        const dept = departments.find((d) => d.name === deptName);
+        setCategories(dept?.categories || []);
+    }, [formData.department, fixedDepartment, departments]);
+
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
             setError('');
+            setShowNewCategory(false);
+            setNewCategoryName('');
             const dept = fixedDepartment
                 || (isCoordinator && user?.departments?.length > 0 ? user.departments[0] : '');
             setFormData({
@@ -63,6 +84,43 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
             ? parseInt(e.target.value, 10)
             : e.target.value;
         setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleCategoryChange = (e) => {
+        const value = e.target.value;
+        if (value === '__new__') {
+            setShowNewCategory(true);
+            setFormData((prev) => ({ ...prev, category: '' }));
+        } else {
+            setShowNewCategory(false);
+            setNewCategoryName('');
+            setFormData((prev) => ({ ...prev, category: value }));
+        }
+    };
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+
+        const deptName = fixedDepartment || formData.department;
+        const dept = departments.find((d) => d.name === deptName);
+        if (!dept) return;
+
+        setCreatingCategory(true);
+        setError('');
+        try {
+            await addDepartmentCategory(dept.id, newCategoryName.trim(), token);
+            // Refresh departments to get updated categories
+            const updatedDepts = await fetchDepartmentsMetadata();
+            setDepartments(updatedDepts);
+            // Select the newly created category
+            setFormData((prev) => ({ ...prev, category: newCategoryName.trim() }));
+            setShowNewCategory(false);
+            setNewCategoryName('');
+        } catch (err) {
+            setError(err.message || 'Error al crear la categoría');
+        } finally {
+            setCreatingCategory(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -167,13 +225,65 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
 
                     <div className="ctm-field">
                         <label className="ctm-label">Categoría</label>
-                        <input
-                            className="ctm-input"
-                            type="text"
-                            placeholder="Ej: Infraestructura"
-                            value={formData.category}
-                            onChange={handleChange('category')}
-                        />
+                        {!showNewCategory ? (
+                            <select
+                                className="ctm-select"
+                                value={formData.category}
+                                onChange={handleCategoryChange}
+                            >
+                                <option value="">Seleccionar categoría</option>
+                                {categories.map((cat) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                                {isAdmin && (
+                                    <option value="__new__">➕ Crear nueva categoría...</option>
+                                )}
+                            </select>
+                        ) : (
+                            <div className="ctm-new-category">
+                                <input
+                                    className="ctm-input ctm-new-category__input"
+                                    type="text"
+                                    placeholder="Nombre de la nueva categoría"
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleCreateCategory();
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    className="ctm-new-category__btn ctm-new-category__btn--create"
+                                    onClick={handleCreateCategory}
+                                    disabled={creatingCategory || !newCategoryName.trim()}
+                                    title="Crear categoría"
+                                >
+                                    {creatingCategory ? <FiLoader className="ctm-spinner" /> : <FiCheck />}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="ctm-new-category__btn ctm-new-category__btn--cancel"
+                                    onClick={() => {
+                                        setShowNewCategory(false);
+                                        setNewCategoryName('');
+                                    }}
+                                    title="Cancelar"
+                                >
+                                    <FiX />
+                                </button>
+                            </div>
+                        )}
+                        {categories.length === 0 && !showNewCategory && (
+                            <span className="ctm-hint">
+                                {isAdmin
+                                    ? 'No hay categorías. Selecciona "Crear nueva categoría" para agregar una.'
+                                    : 'No hay categorías disponibles para este departamento.'}
+                            </span>
+                        )}
                     </div>
 
                     <div className="ctm-row">

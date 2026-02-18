@@ -146,3 +146,29 @@ export async function deleteActivityById(activityId, token) {
 
   return data;
 }
+
+/**
+ * Add a new category to a department (admin only).
+ * @param {string} departmentId — Firestore document ID of the department
+ * @param {string} categoryName — name of the new category
+ * @param {string} token — Firebase auth token
+ */
+export async function addDepartmentCategory(departmentId, categoryName, token) {
+  const res = await fetch(`${API_URL}/departments/${departmentId}/categories`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ categoryName }),
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(data.message || 'Error al crear categoría');
+  }
+
+  return data;
+}
+

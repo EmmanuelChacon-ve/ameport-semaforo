@@ -27,10 +27,27 @@ export default function useGanttData(departmentName) {
       // Find this department's metadata
       const dept = departments.find((d) => d.name === departmentName);
 
+      let deptCategories = [];
+      let deptCategoryColors = {};
+
       if (dept) {
-        setCategories(dept.categories || []);
-        setCategoryColors(dept.categoryColors || {});
+        deptCategories = [...(dept.categories || [])];
+        deptCategoryColors = { ...(dept.categoryColors || {}) };
       }
+
+      // Detect orphan categories (categories in tasks but not in dept metadata)
+      const orphanFallbackColor = '#64748b';
+      activities.forEach((t) => {
+        if (t.category && !deptCategories.includes(t.category)) {
+          deptCategories.push(t.category);
+          if (!deptCategoryColors[t.category]) {
+            deptCategoryColors[t.category] = orphanFallbackColor;
+          }
+        }
+      });
+
+      setCategories(deptCategories);
+      setCategoryColors(deptCategoryColors);
 
       // Apply semaforo calculation
       const CURRENT_MONTH = new Date().getMonth();

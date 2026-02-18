@@ -1,7 +1,8 @@
+import { createPortal } from 'react-dom';
 import './DeleteConfirmDialog.css';
 
 export default function DeleteConfirmDialog({ taskName, onConfirm, onCancel, loading }) {
-    return (
+    return createPortal(
         <div className="del-overlay" onClick={onCancel}>
             <div className="del-confirm" onClick={(e) => e.stopPropagation()}>
                 <div className="del-confirm__icon">🗑️</div>
@@ -27,6 +28,7 @@ export default function DeleteConfirmDialog({ taskName, onConfirm, onCancel, loa
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
