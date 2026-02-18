@@ -40,7 +40,7 @@ export default function Login() {
                     <div className="login__logo">
                         <span className="login__logo-icon">🚦</span>
                     </div>
-                    <h1 className="login__title">Semáforo</h1>
+                    <h1 className="login__title">AMEPORT</h1>
                     <p className="login__subtitle">Panel de Gestión de Actividades</p>
                 </div>
 
