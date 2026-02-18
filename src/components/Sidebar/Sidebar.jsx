@@ -1,0 +1,164 @@
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+    FiGrid,
+    FiBarChart2,
+    FiMonitor,
+    FiMapPin,
+    FiHeart,
+    FiMic,
+    FiTool,
+    FiUsers,
+    FiDollarSign,
+    FiTrendingUp,
+    FiShoppingCart,
+    FiChevronLeft,
+    FiChevronRight,
+    FiChevronDown,
+    FiMenu,
+    FiX,
+    FiLogOut,
+} from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import './Sidebar.css';
+
+const topItems = [
+    { to: '/', icon: <FiGrid />, label: 'Dashboard' },
+    { to: '/reportes', icon: <FiBarChart2 />, label: 'Reportes' },
+];
+
+const deptItems = [
+    { to: '/sistemas', icon: <FiMonitor />, label: 'Sistemas', deptKey: 'Sistemas' },
+    { to: '/turismo', icon: <FiMapPin />, label: 'Turismo', deptKey: 'Turismo' },
+    { to: '/salud', icon: <FiHeart />, label: 'Salud', deptKey: 'Salud y Recreación' },
+    { to: '/comunicacion', icon: <FiMic />, label: 'Comunicación', deptKey: 'Comunicación y Marketing' },
+    { to: '/mantenimiento', icon: <FiTool />, label: 'Mantenimiento', deptKey: 'Mantenimiento' },
+    { to: '/gestion', icon: <FiUsers />, label: 'Gestión', deptKey: 'Gestión de Asociados' },
+    { to: '/finanzas', icon: <FiDollarSign />, label: 'Finanzas', deptKey: 'Finanzas' },
+    { to: '/crecimiento', icon: <FiTrendingUp />, label: 'Crecimiento', deptKey: 'Crecimiento' },
+    { to: '/consumo', icon: <FiShoppingCart />, label: 'Consumo', deptKey: 'Consumo' },
+];
+
+export default function Sidebar() {
+    const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [deptsOpen, setDeptsOpen] = useState(true);
+    const location = useLocation();
+    const { user, logout } = useAuth();
+
+    // Filtrar departamentos según permisos del usuario
+    const visibleDepts = user?.role === 'admin'
+        ? deptItems
+        : deptItems.filter((d) => (user?.departments || []).includes(d.deptKey));
+
+    // Cerrar sidebar móvil al cambiar de ruta
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [location.pathname]);
+
+    // Prevent body scroll when mobile sidebar is open
+    useEffect(() => {
+        if (mobileOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileOpen]);
+
+    const renderLink = (item) => (
+        <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+                `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+            }
+        >
+            <span className="sidebar__link-icon">{item.icon}</span>
+            {!collapsed && <span className="sidebar__link-label">{item.label}</span>}
+        </NavLink>
+    );
+
+    return (
+        <>
+            {/* Mobile hamburger button */}
+            <button
+                className="sidebar__mobile-toggle"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Abrir menú"
+            >
+                <FiMenu />
+            </button>
+
+            {/* Backdrop overlay */}
+            {mobileOpen && (
+                <div
+                    className="sidebar__backdrop"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''} ${mobileOpen ? 'sidebar--mobile-open' : ''}`}>
+                <div className="sidebar__header">
+                    <div className="sidebar__logo">
+                        <span className="sidebar__logo-icon">🚦</span>
+                        {!collapsed && <span className="sidebar__logo-text">Semáforo</span>}
+                    </div>
+                    {/* Desktop collapsed toggle */}
+                    <button
+                        className="sidebar__toggle"
+                        onClick={() => setCollapsed(!collapsed)}
+                        aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+                    >
+                        {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+                    </button>
+                    {/* Mobile close */}
+                    <button
+                        className="sidebar__mobile-close"
+                        onClick={() => setMobileOpen(false)}
+                        aria-label="Cerrar menú"
+                    >
+                        <FiX />
+                    </button>
+                </div>
+
+                <nav className="sidebar__nav">
+                    {/* ── Links solo para admin ── */}
+                    {user?.role === 'admin' && topItems.map(renderLink)}
+
+                    {/* ── Departamentos group ── */}
+                    {!collapsed && (
+                        <button
+                            className={`sidebar__group-toggle ${deptsOpen ? 'sidebar__group-toggle--open' : ''}`}
+                            onClick={() => setDeptsOpen(!deptsOpen)}
+                        >
+                            <span className="sidebar__group-label">Departamentos</span>
+                            <FiChevronDown className="sidebar__group-chevron" />
+                        </button>
+                    )}
+
+                    <div className={`sidebar__group ${deptsOpen || collapsed ? 'sidebar__group--open' : ''}`}>
+                        {visibleDepts.map(renderLink)}
+                    </div>
+                </nav>
+
+                <div className="sidebar__footer">
+                    {!collapsed && user && (
+                        <div className="sidebar__user-info">
+                            <p className="sidebar__user-name">{user.displayName || user.email}</p>
+                            <p className="sidebar__user-role">{user.role === 'admin' ? 'Administrador' : 'Coordinador'}</p>
+                        </div>
+                    )}
+                    <button
+                        className="sidebar__logout"
+                        onClick={logout}
+                        title="Cerrar sesión"
+                    >
+                        <FiLogOut />
+                        {!collapsed && <span>Cerrar sesión</span>}
+                    </button>
+                </div>
+            </aside>
+        </>
+    );
+}

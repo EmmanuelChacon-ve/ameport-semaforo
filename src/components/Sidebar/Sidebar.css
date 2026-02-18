@@ -1,0 +1,401 @@
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar--collapsed {
+    width: 72px;
+}
+
+.sidebar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.sidebar__logo-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.sidebar__logo-text {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.sidebar__toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: #94a3b8;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.sidebar__toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+}
+
+.sidebar__nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 12px;
+    overflow-y: auto;
+}
+
+.sidebar__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar__link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 3px;
+    height: 60%;
+    background: #3b82f6;
+    border-radius: 0 3px 3px 0;
+    transition: transform 0.2s;
+}
+
+.sidebar__link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+}
+
+.sidebar__link--active {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+
+.sidebar__link--active::before {
+    transform: translateY(-50%) scaleY(1);
+}
+
+.sidebar__link-icon {
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sidebar__link-label {
+    white-space: nowrap;
+}
+
+/* ── Group Toggle (Departamentos) ── */
+.sidebar__group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 14px;
+    margin-top: 8px;
+    border: none;
+    background: none;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: color 0.2s;
+    border-radius: 6px;
+}
+
+.sidebar__group-toggle:hover {
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar__group-label {
+    white-space: nowrap;
+}
+
+.sidebar__group-chevron {
+    font-size: 0.85rem;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar__group-toggle--open .sidebar__group-chevron {
+    transform: rotate(180deg);
+}
+
+/* ── Collapsible Group ── */
+.sidebar__group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar__group--open {
+    max-height: 600px;
+}
+
+.sidebar__footer {
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar__user-info {
+    padding: 4px 6px;
+}
+
+.sidebar__user-name {
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.sidebar__user-role {
+    color: #64748b;
+    font-size: 0.7rem;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.sidebar__logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.sidebar__logout:hover {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+}
+
+.sidebar__logout svg {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* ── Collapsed styles (desktop) ── */
+.sidebar--collapsed .sidebar__header {
+    justify-content: center;
+    padding: 20px 8px;
+}
+
+.sidebar--collapsed .sidebar__link {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar--collapsed .sidebar__nav {
+    padding: 16px 8px;
+}
+
+.sidebar--collapsed .sidebar__group-toggle {
+    display: none;
+}
+
+.sidebar--collapsed .sidebar__footer {
+    padding: 8px;
+}
+
+.sidebar--collapsed .sidebar__logout {
+    justify-content: center;
+    padding: 10px;
+}
+
+/* ── Mobile hamburger button ── */
+.sidebar__mobile-toggle {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 200;
+    background: #0f172a;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 1.3rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s;
+}
+
+.sidebar__mobile-toggle:hover {
+    background: #1e293b;
+}
+
+/* ── Mobile close button (inside sidebar) ── */
+.sidebar__mobile-close {
+    display: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #94a3b8;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.sidebar__mobile-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* ── Backdrop ── */
+.sidebar__backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    backdrop-filter: blur(2px);
+}
+
+/* ══════════════════════════════════
+   RESPONSIVE  
+   ══════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .sidebar:not(.sidebar--mobile-open) {
+        width: 72px;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__logo-text,
+    .sidebar:not(.sidebar--mobile-open) .sidebar__link-label,
+    .sidebar:not(.sidebar--mobile-open) .sidebar__version,
+    .sidebar:not(.sidebar--mobile-open) .sidebar__group-toggle {
+        display: none;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__header {
+        justify-content: center;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__link {
+        justify-content: center;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__toggle {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Hide sidebar off-screen by default */
+    .sidebar {
+        width: 260px;
+        transform: translateX(-100%);
+        z-index: 110;
+    }
+
+    /* Show sidebar when mobile-open */
+    .sidebar--mobile-open {
+        transform: translateX(0);
+    }
+
+    /* Show mobile toggle button */
+    .sidebar__mobile-toggle {
+        display: flex;
+    }
+
+    /* Show close button inside sidebar */
+    .sidebar__mobile-close {
+        display: flex;
+    }
+
+    /* Hide desktop toggle */
+    .sidebar__toggle {
+        display: none;
+    }
+
+    /* Show backdrop */
+    .sidebar__backdrop {
+        display: block;
+    }
+
+    /* Always show labels when mobile-open */
+    .sidebar--mobile-open .sidebar__logo-text,
+    .sidebar--mobile-open .sidebar__link-label,
+    .sidebar--mobile-open .sidebar__version,
+    .sidebar--mobile-open .sidebar__group-toggle {
+        display: flex;
+    }
+
+    .sidebar--mobile-open .sidebar__link {
+        justify-content: flex-start;
+    }
+
+    .sidebar--mobile-open .sidebar__header {
+        justify-content: space-between;
+    }
+}

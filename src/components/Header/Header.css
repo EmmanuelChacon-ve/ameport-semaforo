@@ -1,0 +1,74 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header__left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.header__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.header__subtitle {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    font-weight: 400;
+}
+
+.header__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header__date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    text-transform: capitalize;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header__date-icon {
+    color: #3b82f6;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 16px 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .header__title {
+        font-size: 1.3rem;
+    }
+}

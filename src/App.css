@@ -1,0 +1,26 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-layout__main {
+  flex: 1;
+  margin-left: 240px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+  /* Prevent flex overflow */
+}
+
+@media (max-width: 1024px) {
+  .app-layout__main {
+    margin-left: 72px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout__main {
+    margin-left: 0;
+    padding-top: 56px;
+    /* Space for hamburger button */
+  }
+}

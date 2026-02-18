@@ -1,0 +1,248 @@
+.dept-section {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+    transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.dept-section:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* ── Header ── */
+.dept-section__header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 2px solid var(--dept-color, #3b82f6);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, #f8fafc 100%);
+}
+
+.dept-section__title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.dept-section__icon {
+    font-size: 1.4rem;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 10px;
+}
+
+.dept-section__name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.dept-section__badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--dept-color, #3b82f6);
+    background: color-mix(in srgb, var(--dept-color, #3b82f6) 10%, white);
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.dept-section__coordinator {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.dept-section__coord-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.dept-section__coord-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dept-section__coord-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--dept-color, #3b82f6);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dept-section__coord-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #1e293b;
+}
+
+/* ── Table ── */
+.dept-section__table-wrap {
+    overflow-x: auto;
+}
+
+.dept-section__table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dept-section__th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #fafbfc;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dept-section__th--num {
+    width: 40px;
+    text-align: center;
+}
+
+.dept-section__th--status {
+    width: 140px;
+    text-align: center;
+}
+
+.dept-section__row {
+    transition: background 0.15s;
+}
+
+.dept-section__row:hover {
+    background: #f8fafc;
+}
+
+.dept-section__td {
+    padding: 10px 16px;
+    font-size: 0.82rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dept-section__td--num {
+    text-align: center;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+.dept-section__td--name {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.dept-section__td--status {
+    text-align: center;
+}
+
+/* ── Status pill ── */
+.dept-section__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--pill-color, #64748b);
+    background: var(--pill-bg, #f1f5f9);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+}
+
+.dept-section__pill:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dept-section__pill:active {
+    transform: scale(0.97);
+}
+
+.dept-section__pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--pill-color, #64748b);
+    flex-shrink: 0;
+}
+
+/* ── Readonly pill (non-admin users) ── */
+.dept-section__pill--readonly {
+    cursor: default;
+}
+
+.dept-section__pill--readonly:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.dept-section__pill--readonly:active {
+    transform: none;
+}
+
+/* ── Empty state ── */
+.dept-section__empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.dept-section__empty span {
+    font-size: 1.8rem;
+}
+
+.dept-section__empty p {
+    margin: 8px 0 0;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .dept-section__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    .dept-section__coordinator {
+        align-items: flex-start;
+    }
+
+    .dept-section__td,
+    .dept-section__th {
+        padding: 8px 12px;
+    }
+}
