@@ -5,9 +5,9 @@ import useGanttData from '../../hooks/useGanttData';
 import useGanttCRUD from '../../hooks/useGanttCRUD';
 import { useTasks } from '../../context/TaskContext';
 import useObservationRead from '../../hooks/useObservationRead';
-import { FiFilter, FiX, FiPlus, FiTrash2, FiFolder, FiMessageSquare, FiEye, FiPrinter, FiDownload } from 'react-icons/fi';
+import { FiFilter, FiX, FiPlus, FiTrash2, FiFolder, FiMessageSquare, FiEye, FiPrinter } from 'react-icons/fi';
 import printTable from '../../utils/printTable';
-import exportCSV from '../../utils/exportCSV';
+
 import CreateTaskModal from '../CreateTaskModal/CreateTaskModal';
 import DeleteConfirmDialog from '../DeleteConfirmDialog/DeleteConfirmDialog';
 import ActivityDetailModal from '../ActivityDetailModal/ActivityDetailModal';
@@ -30,7 +30,7 @@ export default function GanttChart() {
     const [hoveredTask, setHoveredTask] = useState(null);
     const [detailTask, setDetailTask] = useState(null);
     const [showCatModal, setShowCatModal] = useState(false);
-    const { getDeptStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
+    const { getDeptStatus, getDeptDetailedStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
     const { hasUnread } = useObservationRead();
     const tableRef = useRef(null);
     const { tasks: tasksRaw, categories, categoryColors, departments, loading, refetch } = useGanttData(DEPT_NAME);
@@ -165,11 +165,7 @@ export default function GanttChart() {
                             <FiPrinter size={14} /> Imprimir
                         </button>
                     )}
-                    {isAdmin && (
-                        <button className="grid-print-btn" onClick={() => exportCSV(filtered, 'Sistemas', getDeptStatus)}>
-                            <FiDownload size={14} /> Exportar
-                        </button>
-                    )}
+
                     {canCreate && (
                         <button className="gantt__create-btn" onClick={() => setShowCatModal(true)}>
                             <FiFolder /> Nueva Categoría
@@ -225,7 +221,7 @@ export default function GanttChart() {
                                                         </td>
                                                     </tr>
                                                     {tasks.map((task, idx) => {
-                                                        const effectiveStatus = getDeptStatus(task.id, task.status);
+                                                        const effectiveStatus = getDeptDetailedStatus(task.id, task.semaforo || task.status);
                                                         const pillColor = DEPT_SEMAFORO_COLORS[effectiveStatus] || statusColors[effectiveStatus] || statusColors[task.status];
                                                         const pillLabel = DEPT_SEMAFORO_LABELS[effectiveStatus] || statusLabels[effectiveStatus] || statusLabels[task.status];
                                                         return (
@@ -286,7 +282,7 @@ export default function GanttChart() {
                                     ) : (
                                         /* ── Flat list fallback (no categories) ── */
                                         filtered.map((task, idx) => {
-                                            const effectiveStatus = getDeptStatus(task.id, task.status);
+                                            const effectiveStatus = getDeptDetailedStatus(task.id, task.semaforo || task.status);
                                             const pillColor = DEPT_SEMAFORO_COLORS[effectiveStatus] || statusColors[effectiveStatus] || statusColors[task.status];
                                             const pillLabel = DEPT_SEMAFORO_LABELS[effectiveStatus] || statusLabels[effectiveStatus] || statusLabels[task.status];
                                             const barColor = statusColors[task.status];

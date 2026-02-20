@@ -3,7 +3,7 @@ import { STATUS_CONFIG } from '../../utils/semaforoUtils';
 import './DeptSection.css';
 
 export default function DeptSection({ department }) {
-    const { getDeptStatus, cycleDeptStatus, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, isAdmin } = useTasks();
+    const { getDeptStatus, getDeptDetailedStatus, cycleDeptStatus, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, isAdmin } = useTasks();
 
     return (
         <div className="dept-section" style={{ '--dept-color': department.color }}>
@@ -45,7 +45,7 @@ export default function DeptSection({ department }) {
                         </thead>
                         <tbody>
                             {department.tasks.map((task, i) => {
-                                const eff = getDeptStatus(task.id, task.semaforo);
+                                const eff = getDeptDetailedStatus(task.id, task.semaforo);
                                 const color = DEPT_SEMAFORO_COLORS[eff] || STATUS_CONFIG[task.status]?.color || '#64748b';
                                 const label = DEPT_SEMAFORO_LABELS[eff] || task.status;
 

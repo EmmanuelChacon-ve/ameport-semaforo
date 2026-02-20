@@ -5,9 +5,9 @@ import useGanttData from '../../hooks/useGanttData';
 import useGanttCRUD from '../../hooks/useGanttCRUD';
 import { useTasks } from '../../context/TaskContext';
 import useObservationRead from '../../hooks/useObservationRead';
-import { FiFilter, FiX, FiPlus, FiTrash2, FiFolder, FiMessageSquare, FiEye, FiPrinter, FiDownload } from 'react-icons/fi';
+import { FiFilter, FiX, FiPlus, FiTrash2, FiFolder, FiMessageSquare, FiEye, FiPrinter } from 'react-icons/fi';
 import printTable from '../../utils/printTable';
-import exportCSV from '../../utils/exportCSV';
+
 import CreateTaskModal from '../CreateTaskModal/CreateTaskModal';
 import DeleteConfirmDialog from '../DeleteConfirmDialog/DeleteConfirmDialog';
 import ActivityDetailModal from '../ActivityDetailModal/ActivityDetailModal';
@@ -29,7 +29,7 @@ export default function MantGantt() {
     const [hoveredTask, setHoveredTask] = useState(null);
     const [detailTask, setDetailTask] = useState(null);
     const [showCatModal, setShowCatModal] = useState(false);
-    const { getDeptStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
+    const { getDeptStatus, getDeptDetailedStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
     const { hasUnread } = useObservationRead();
     const tableRef = useRef(null);
     const { tasks: tasksWithStatus, categories: mantCategories, categoryColors, departments, loading, refetch } = useGanttData(DEPT_NAME);
@@ -126,11 +126,7 @@ export default function MantGantt() {
                             <FiPrinter size={14} /> Imprimir
                         </button>
                     )}
-                    {isAdmin && (
-                        <button className="grid-print-btn" onClick={() => exportCSV(filtered, 'Mantenimiento', getDeptStatus)}>
-                            <FiDownload size={14} /> Exportar
-                        </button>
-                    )}
+
                     {canCreate && (<button className="gantt__create-btn" onClick={() => setShowCatModal(true)}><FiFolder /> Nueva Categoría</button>)}
                     {canCreate && (<button className="gantt__create-btn" onClick={() => setShowCreateModal(true)}><FiPlus /> Nueva Tarea</button>)}
                 </div>
@@ -175,7 +171,7 @@ export default function MantGantt() {
                                                             <td className="mgantt__td mgantt__td--freq"><span className="mgantt__freq-pill" style={{ '--fp-color': freqColor }}>{task.frequency}</span></td>
                                                             <td className="mgantt__td mgantt__td--sem">
                                                                 {(() => {
-                                                                    const eff = getDeptStatus(task.id, task.semaforo);
+                                                                    const eff = getDeptDetailedStatus(task.id, task.semaforo);
                                                                     const ec = DEPT_SEMAFORO_COLORS[eff] || semaforoColors[eff];
                                                                     const el = DEPT_SEMAFORO_LABELS[eff] || statusLabels[eff];
                                                                     return (<span className="mgantt__sem-pill" style={{ '--s-color': ec, '--s-bg': `${ec}18`, cursor: 'default' }}>

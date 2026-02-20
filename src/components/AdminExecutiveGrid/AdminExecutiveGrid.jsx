@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { monthNames } from '../../utils/semaforoUtils';
 import { useTasks } from '../../context/TaskContext';
 import ObservationIndicator from '../ObservationIndicator/ObservationIndicator';
-import { FiEye, FiPrinter, FiDownload } from 'react-icons/fi';
+import { FiEye, FiPrinter } from 'react-icons/fi';
 import printTable from '../../utils/printTable';
-import exportCSV from '../../utils/exportCSV';
+
 import './AdminExecutiveGrid.css';
 
 const CURRENT_MONTH = new Date().getMonth();
@@ -23,7 +23,7 @@ const CURRENT_MONTH = new Date().getMonth();
 export default function AdminExecutiveGrid({ sections }) {
     const navigate = useNavigate();
     const {
-        getDeptStatus, cycleDeptStatus,
+        getDeptStatus, getDeptDetailedStatus, cycleDeptStatus,
         DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS,
     } = useTasks();
     const tableRef = useRef(null);
@@ -52,12 +52,7 @@ export default function AdminExecutiveGrid({ sections }) {
                 <button className="grid-print-btn" onClick={() => printTable(tableRef.current, 'Dashboard Ejecutivo')}>
                     <FiPrinter size={14} /> Imprimir
                 </button>
-                <button className="grid-print-btn" onClick={() => {
-                    const allTasks = sections.flatMap(s => s.tasks);
-                    exportCSV(allTasks, 'Dashboard_Ejecutivo', getDeptStatus);
-                }}>
-                    <FiDownload size={14} /> Exportar
-                </button>
+
             </div>
             <div ref={tableRef}>
                 <table className="aeg__table">
@@ -94,7 +89,7 @@ export default function AdminExecutiveGrid({ sections }) {
                                     {/* ── Tasks ── */}
                                     {dept.tasks.map((task) => {
                                         rowNum++;
-                                        const eff = getDeptStatus(task.id, task.semaforo);
+                                        const eff = getDeptDetailedStatus(task.id, task.semaforo);
                                         const statusColor = DEPT_SEMAFORO_COLORS[eff];
                                         const statusLabel = DEPT_SEMAFORO_LABELS[eff];
                                         const desvio = calcDesvio(task.endMonth);

@@ -30,12 +30,24 @@ const DEPT_SEMAFORO_COLORS = {
     green: '#10B981',
     yellow: '#F59E0B',
     red: '#EF4444',
+    // Detailed status colors (used for grid pills)
+    [STATUS.REALIZADO]: '#10B981',
+    [STATUS.EN_CURSO]: '#3B82F6',
+    [STATUS.PENDIENTE]: '#F59E0B',
+    [STATUS.ATRASADO]: '#EF4444',
+    [STATUS.NO_REALIZADO]: '#6B7280',
 };
 
 const DEPT_SEMAFORO_LABELS = {
     green: 'Realizado',
     yellow: 'A tiempo',
     red: 'Atrasado',
+    // Detailed status labels (used for grid pills)
+    [STATUS.REALIZADO]: 'Realizado',
+    [STATUS.EN_CURSO]: 'En Curso',
+    [STATUS.PENDIENTE]: 'Pendiente',
+    [STATUS.ATRASADO]: 'Atrasado',
+    [STATUS.NO_REALIZADO]: 'No Realizado',
 };
 
 /**
@@ -239,6 +251,24 @@ export function TaskProvider({ children }) {
         return autoSemaforo;
     }, [deptOverrides]);
 
+    // Get the DETAILED status name for grid pills (Realizado, En Curso, Pendiente, Atrasado, No Realizado)
+    const getDeptDetailedStatus = useCallback((taskId, autoSemaforo) => {
+        const override = deptOverrides[taskId];
+        if (override) {
+            if (autoSemaforo === 'red' && override !== 'Realizado') {
+                return STATUS.ATRASADO;
+            }
+            return override;
+        }
+        // No override — derive from auto semaforo
+        switch (autoSemaforo) {
+            case 'green': return STATUS.REALIZADO;
+            case 'yellow': return STATUS.EN_CURSO;
+            case 'red': return STATUS.ATRASADO;
+            default: return STATUS.PENDIENTE;
+        }
+    }, [deptOverrides]);
+
     // Set a specific manual status for a dept task
     const setDeptTaskStatus = useCallback((taskId, newStatus) => {
         if (!isAdmin) return;  // Coordinators cannot change status
@@ -355,6 +385,7 @@ export function TaskProvider({ children }) {
         refreshTasks,
         // Department overrides
         getDeptStatus,
+        getDeptDetailedStatus,
         setDeptTaskStatus,
         cycleDeptStatus,
         clearDeptOverride,

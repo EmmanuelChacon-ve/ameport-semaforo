@@ -21,7 +21,7 @@ const CURRENT_MONTH = new Date().getMonth();
  */
 export default function AdminDeptTable({ tasks, departmentName, categoryColors = {}, onDeleteClick }) {
     const {
-        getDeptStatus, cycleDeptStatus,
+        getDeptStatus, getDeptDetailedStatus, cycleDeptStatus,
         DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS,
         pendingObservation, confirmObservation, cancelObservation,
     } = useTasks();
@@ -115,7 +115,7 @@ export default function AdminDeptTable({ tasks, departmentName, categoryColors =
                                     {/* ── Tasks in category ── */}
                                     {catTasks.map((task) => {
                                         rowNum++;
-                                        const eff = getDeptStatus(task.id, task.semaforo);
+                                        const eff = getDeptDetailedStatus(task.id, task.semaforo);
                                         const statusColor = DEPT_SEMAFORO_COLORS[eff];
                                         const statusLabel = DEPT_SEMAFORO_LABELS[eff];
                                         const desvio = calcDesvio(task.endMonth);
