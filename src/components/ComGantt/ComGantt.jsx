@@ -1,22 +1,38 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { monthNames, statusLabels, semaforoColors } from '../../utils/semaforoUtils';
 import useGanttData from '../../hooks/useGanttData';
 import useGanttCRUD from '../../hooks/useGanttCRUD';
 import { useTasks } from '../../context/TaskContext';
-import { FiFilter, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
+import useObservationRead from '../../hooks/useObservationRead';
+import { FiFilter, FiX, FiPlus, FiTrash2, FiFolder, FiMessageSquare, FiEye, FiPrinter, FiDownload } from 'react-icons/fi';
+import printTable from '../../utils/printTable';
+import exportCSV from '../../utils/exportCSV';
 import CreateTaskModal from '../CreateTaskModal/CreateTaskModal';
 import DeleteConfirmDialog from '../DeleteConfirmDialog/DeleteConfirmDialog';
+import ActivityDetailModal from '../ActivityDetailModal/ActivityDetailModal';
+import CreateCategoryModal from '../CreateCategoryModal/CreateCategoryModal';
+import ObservationIndicator from '../ObservationIndicator/ObservationIndicator';
+import StatusRequestButton from '../StatusRequestButton/StatusRequestButton';
+import ObservationPrompt from '../ObservationPrompt/ObservationPrompt';
+import AdminDeptTable from '../AdminDeptTable/AdminDeptTable';
 import './ComGantt.css';
 
 const CURRENT_MONTH = new Date().getMonth();
 const DEPT_NAME = 'Comunicación y Marketing';
 
 export default function ComGantt() {
+    const navigate = useNavigate();
     const [semaforoFilter, setSemaforoFilter] = useState(null);
     const [categoryFilter, setCategoryFilter] = useState(null);
+    const [unreadFilter, setUnreadFilter] = useState(false);
     const [hoveredTask, setHoveredTask] = useState(null);
-    const { getDeptStatus, cycleDeptStatus, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS } = useTasks();
-    const { tasks: tasksWithStatus, categories: comCategories, categoryColors, loading, refetch } = useGanttData(DEPT_NAME);
+    const [detailTask, setDetailTask] = useState(null);
+    const [showCatModal, setShowCatModal] = useState(false);
+    const { getDeptStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
+    const { hasUnread } = useObservationRead();
+    const tableRef = useRef(null);
+    const { tasks: tasksWithStatus, categories: comCategories, categoryColors, departments, loading, refetch } = useGanttData(DEPT_NAME);
     const {
         isAdmin, canCreate,
         showCreateModal, setShowCreateModal,
@@ -26,9 +42,9 @@ export default function ComGantt() {
 
     const semaforoCounts = useMemo(() => {
         const c = { green: 0, yellow: 0, red: 0 };
-        tasksWithStatus.forEach((t) => c[t.semaforo]++);
+        tasksWithStatus.forEach((t) => { const s = getDeptStatus(t.id, t.semaforo); if (c[s] !== undefined) c[s]++; });
         return c;
-    }, [tasksWithStatus]);
+    }, [tasksWithStatus, getDeptStatus]);
 
     const categoryCounts = useMemo(() => {
         const c = {};
@@ -37,12 +53,17 @@ export default function ComGantt() {
         return c;
     }, [tasksWithStatus, comCategories]);
 
+    const unreadCount = useMemo(() => {
+        return tasksWithStatus.filter((t) => (t.observations?.length || 0) > 0 && hasUnread(t.id, t.observations.length)).length;
+    }, [tasksWithStatus, hasUnread]);
+
     const filtered = useMemo(() => {
         let r = tasksWithStatus;
-        if (semaforoFilter) r = r.filter((t) => t.semaforo === semaforoFilter);
+        if (semaforoFilter) r = r.filter((t) => getDeptStatus(t.id, t.semaforo) === semaforoFilter);
         if (categoryFilter) r = r.filter((t) => t.category === categoryFilter);
+        if (unreadFilter) r = r.filter((t) => (t.observations?.length || 0) > 0 && hasUnread(t.id, t.observations.length));
         return r;
-    }, [tasksWithStatus, semaforoFilter, categoryFilter]);
+    }, [tasksWithStatus, semaforoFilter, categoryFilter, unreadFilter, hasUnread, getDeptStatus]);
 
     const grouped = useMemo(() => {
         const g = {};
@@ -51,7 +72,7 @@ export default function ComGantt() {
         return g;
     }, [filtered, comCategories]);
 
-    const hasFilters = semaforoFilter || categoryFilter;
+    const hasFilters = semaforoFilter || categoryFilter || unreadFilter;
 
     if (loading) {
         return (<div className="cgantt cgantt--loading"><div className="cgantt__spinner" /><p>Cargando actividades...</p></div>);
@@ -72,6 +93,12 @@ export default function ComGantt() {
                             </button>
                         ))}
                     </div>
+                    <button className={`cgantt__filter-btn ${unreadFilter ? 'cgantt__filter-btn--active' : ''}`}
+                        style={{ '--f-color': '#ef4444', '--f-bg': '#ef444418' }}
+                        onClick={() => setUnreadFilter((v) => !v)}>
+                        <FiMessageSquare size={12} /><span>No leídas</span>
+                        <span className="cgantt__filter-count">{unreadCount}</span>
+                    </button>
                 </div>
                 <div className="cgantt__filters-row">
                     <div className="cgantt__filters-left"><span className="cgantt__filter-label">Área:</span></div>
@@ -86,75 +113,109 @@ export default function ComGantt() {
                         ))}
                     </div>
                 </div>
-                {hasFilters && (<button className="cgantt__clear-all" onClick={() => { setSemaforoFilter(null); setCategoryFilter(null); }}><FiX /> Limpiar filtros</button>)}
+                {hasFilters && (<button className="cgantt__clear-all" onClick={() => { setSemaforoFilter(null); setCategoryFilter(null); setUnreadFilter(false); }}><FiX /> Limpiar filtros</button>)}
             </div>
 
             <div className="gantt__toolbar">
                 <span className="gantt__toolbar-total">{filtered.length} de {tasksWithStatus.length} actividades</span>
-                {canCreate && (<button className="gantt__create-btn" onClick={() => setShowCreateModal(true)}><FiPlus /> Nueva Tarea</button>)}
+                <div className="gantt__toolbar-actions">
+                    {isAdmin && (
+                        <button className="grid-print-btn" onClick={() => printTable(tableRef.current, 'Comunicación y Marketing')}>
+                            <FiPrinter size={14} /> Imprimir
+                        </button>
+                    )}
+                    {isAdmin && (
+                        <button className="grid-print-btn" onClick={() => exportCSV(filtered, 'Comunicacion_y_Marketing', getDeptStatus)}>
+                            <FiDownload size={14} /> Exportar
+                        </button>
+                    )}
+                    {canCreate && (<button className="gantt__create-btn" onClick={() => setShowCatModal(true)}><FiFolder /> Nueva Categoría</button>)}
+                    {canCreate && (<button className="gantt__create-btn" onClick={() => setShowCreateModal(true)}><FiPlus /> Nueva Tarea</button>)}
+                </div>
             </div>
 
-            <div className="cgantt__wrapper">
-                <table className="cgantt__table">
-                    <thead><tr>
-                        <th className="cgantt__th cgantt__th--task">Actividad</th>
-                        <th className="cgantt__th cgantt__th--sem">Semáforo</th>
-                        {monthNames.map((m, i) => (<th key={m} className={`cgantt__th cgantt__th--month ${i === CURRENT_MONTH ? 'cgantt__th--current' : ''}`}>{m}</th>))}
-                        {isAdmin && <th className="cgantt__th gantt__th--actions"></th>}
-                    </tr></thead>
-                    <tbody>
-                        {comCategories.map((cat) => {
-                            const tasks = grouped[cat];
-                            if (!tasks || tasks.length === 0) return null;
-                            const cc = categoryColors[cat];
-                            return (
-                                <Fragment key={cat}>
-                                    <tr className="cgantt__cat-header"><td colSpan={isAdmin ? 15 : 14} className="cgantt__cat-header-cell" style={{ '--cat-color': cc }}>
-                                        <span className="cgantt__cat-header-dot" /><span>{cat}</span><span className="cgantt__cat-header-count">{tasks.length}</span>
-                                    </td></tr>
-                                    {tasks.map((task, idx) => (
-                                        <tr key={task.id} className={`cgantt__row ${hoveredTask === task.id ? 'cgantt__row--hover' : ''}`}
-                                            style={{ animationDelay: `${idx * 0.03}s` }}
-                                            onMouseEnter={() => setHoveredTask(task.id)} onMouseLeave={() => setHoveredTask(null)}>
-                                            <td className="cgantt__td cgantt__td--task"><span className="cgantt__task-name">{task.name}</span>{task.note && <span className="cgantt__task-note">{task.note}</span>}</td>
-                                            <td className="cgantt__td cgantt__td--sem">
-                                                {(() => {
-                                                    const eff = getDeptStatus(task.id, task.semaforo);
-                                                    const ec = DEPT_SEMAFORO_COLORS[eff] || semaforoColors[eff];
-                                                    const el = DEPT_SEMAFORO_LABELS[eff] || statusLabels[eff];
-                                                    return (<span className="cgantt__sem-pill" style={{ '--s-color': ec, '--s-bg': `${ec}18`, cursor: isAdmin ? 'pointer' : 'default' }}
-                                                        onClick={isAdmin ? () => cycleDeptStatus(task.id, task.semaforo) : undefined}
-                                                        title={isAdmin ? 'Click para cambiar estado' : undefined}>
-                                                        <span className="cgantt__sem-dot" />{el}</span>);
-                                                })()}
-                                            </td>
-                                            {monthNames.map((_, mi) => {
-                                                const inRange = mi >= task.startMonth && mi <= task.endMonth;
-                                                const isStart = mi === task.startMonth;
-                                                const isEnd = mi === task.endMonth;
-                                                return (<td key={mi} className={`cgantt__td cgantt__td--cell ${mi === CURRENT_MONTH ? 'cgantt__td--current-col' : ''}`}>
-                                                    {inRange && (<div className="cgantt__bar" style={{
-                                                        background: `linear-gradient(135deg, ${cc}, ${cc}cc)`,
-                                                        borderRadius: `${isStart ? '6px' : '0'} ${isEnd ? '6px' : '0'} ${isEnd ? '6px' : '0'} ${isStart ? '6px' : '0'}`,
-                                                        boxShadow: hoveredTask === task.id ? `0 2px 12px ${cc}40` : 'none',
-                                                    }} />)}
-                                                </td>);
-                                            })}
-                                            {isAdmin && (<td className="cgantt__td gantt__td--actions"><button className="gantt__delete-btn" onClick={() => handleDeleteClick(task)} title="Eliminar tarea"><FiTrash2 /></button></td>)}
-                                        </tr>
-                                    ))}
-                                </Fragment>
-                            );
-                        })}
-                        {filtered.length === 0 && (<tr><td colSpan={isAdmin ? 15 : 14} className="cgantt__empty"><span className="cgantt__empty-icon">🔍</span><p>No hay actividades con estos filtros</p></td></tr>)}
-                    </tbody>
-                </table>
+            <div ref={tableRef}>
+                {isAdmin ? (
+                    <AdminDeptTable
+                        tasks={filtered}
+                        departmentName={DEPT_NAME}
+                        categoryColors={categoryColors}
+                        onDeleteClick={handleDeleteClick}
+                    />
+                ) : (
+                    <>
+                        <div className="cgantt__wrapper">
+                            <table className="cgantt__table">
+                                <thead><tr>
+                                    <th className="cgantt__th cgantt__th--task">Actividad</th>
+                                    <th className="cgantt__th cgantt__th--sem">Semáforo</th>
+                                    {monthNames.map((m, i) => (<th key={m} className={`cgantt__th cgantt__th--month ${i === CURRENT_MONTH ? 'cgantt__th--current' : ''}`}>{m}</th>))}
+                                    <th className="cgantt__th cgantt__th--actions"></th>
+                                </tr></thead>
+                                <tbody>
+                                    {comCategories.map((cat) => {
+                                        const tasks = grouped[cat];
+                                        if (!tasks || tasks.length === 0) return null;
+                                        const cc = categoryColors[cat];
+                                        return (
+                                            <Fragment key={cat}>
+                                                <tr className="cgantt__cat-header"><td colSpan={15} className="cgantt__cat-header-cell" style={{ '--cat-color': cc }}>
+                                                    <span className="cgantt__cat-header-dot" /><span>{cat}</span><span className="cgantt__cat-header-count">{tasks.length}</span>
+                                                </td></tr>
+                                                {tasks.map((task, idx) => (
+                                                    <tr key={task.id} className={`cgantt__row ${hoveredTask === task.id ? 'cgantt__row--hover' : ''}`}
+                                                        style={{ animationDelay: `${idx * 0.03}s` }}
+                                                        onMouseEnter={() => setHoveredTask(task.id)} onMouseLeave={() => setHoveredTask(null)}>
+                                                        <td className="cgantt__td cgantt__td--task"><span className="cgantt__task-name" style={{ cursor: 'pointer' }} onClick={() => setDetailTask(task)} title="Ver detalle">{task.name}{(task.observations?.length > 0) && <ObservationIndicator activityId={task.id} count={task.observations.length} />}</span>{task.note && <span className="cgantt__task-note">{task.note}</span>}</td>
+                                                        <td className="cgantt__td cgantt__td--sem">
+                                                            {(() => {
+                                                                const eff = getDeptStatus(task.id, task.semaforo);
+                                                                const ec = DEPT_SEMAFORO_COLORS[eff] || semaforoColors[eff];
+                                                                const el = DEPT_SEMAFORO_LABELS[eff] || statusLabels[eff];
+                                                                return (<span className="cgantt__sem-pill" style={{ '--s-color': ec, '--s-bg': `${ec}18`, cursor: 'default' }}>
+                                                                    <span className="cgantt__sem-dot" />{el}</span>);
+                                                            })()}
+                                                            {isCoordinator && <StatusRequestButton activity={task} />}
+                                                        </td>
+                                                        {monthNames.map((_, mi) => {
+                                                            const inRange = mi >= task.startMonth && mi <= task.endMonth;
+                                                            const isStart = mi === task.startMonth;
+                                                            const isEnd = mi === task.endMonth;
+                                                            return (<td key={mi} className={`cgantt__td cgantt__td--cell ${mi === CURRENT_MONTH ? 'cgantt__td--current-col' : ''}`}>
+                                                                {inRange && (<div className="cgantt__bar" style={{
+                                                                    background: `linear-gradient(135deg, ${cc}, ${cc}cc)`,
+                                                                    borderRadius: `${isStart ? '6px' : '0'} ${isEnd ? '6px' : '0'} ${isEnd ? '6px' : '0'} ${isStart ? '6px' : '0'}`,
+                                                                    boxShadow: hoveredTask === task.id ? `0 2px 12px ${cc}40` : 'none',
+                                                                }} />)}
+                                                            </td>);
+                                                        })}
+                                                        <td className="gantt__td gantt__td--actions"><button className="gantt__detail-btn" onClick={() => navigate(`/actividad/${task.id}`)} title="Ver hitos"><FiEye size={13} /></button></td>
+                                                    </tr>
+                                                ))}
+                                            </Fragment>
+                                        );
+                                    })}
+                                    {filtered.length === 0 && (<tr><td colSpan={15} className="cgantt__empty"><span className="cgantt__empty-icon">🔍</span><p>No hay actividades con estos filtros</p></td></tr>)}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="cgantt__current-info"><span className="cgantt__current-dot" />Mes actual: <strong>{monthNames[CURRENT_MONTH]} 2026</strong></div>
+                    </>)
+                }
             </div>
-
-            <div className="cgantt__current-info"><span className="cgantt__current-dot" />Mes actual: <strong>{monthNames[CURRENT_MONTH]} 2026</strong></div>
 
             <CreateTaskModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSubmit={handleCreate} fixedDepartment={DEPT_NAME} />
             {deleteTarget && <DeleteConfirmDialog taskName={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={handleDeleteCancel} loading={deleteLoading} />}
+            {detailTask && <ActivityDetailModal activity={detailTask} onClose={() => setDetailTask(null)} />}
+            <CreateCategoryModal isOpen={showCatModal} onClose={() => setShowCatModal(false)} departmentName={DEPT_NAME} departments={departments} onCategoryCreated={refetch} />
+            {pendingObservation && (
+                <ObservationPrompt
+                    currentStatus={pendingObservation.currentStatus}
+                    activityName={pendingObservation.taskName}
+                    onConfirm={confirmObservation}
+                    onCancel={cancelObservation}
+                />
+            )}
         </div>
     );
 }

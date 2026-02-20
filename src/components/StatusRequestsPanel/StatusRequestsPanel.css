@@ -1,0 +1,341 @@
+.srp {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.srp__refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.srp__refresh-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.srp__refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.srp__spin {
+    animation: srp-spin 0.8s linear infinite;
+}
+
+@keyframes srp-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.srp__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.srp__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.srp__badge {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+    animation: srp-pulse 2s ease infinite;
+}
+
+@keyframes srp-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+}
+
+.srp__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.srp__item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.15s;
+}
+
+.srp__item:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.srp__item-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.srp__item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.srp__item-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 4px;
+}
+
+.srp__item-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.srp__item-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.srp__item-status {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    background: var(--status-bg);
+    color: var(--status-color);
+}
+
+.srp__item-reason {
+    font-size: 0.82rem;
+    color: #475569;
+    line-height: 1.4;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.srp__item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.srp__approve-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #059669;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.srp__approve-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.srp__approve-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.srp__reject-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.srp__reject-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.srp__reject-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.srp__empty {
+    text-align: center;
+    padding: 24px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.srp__empty-icon {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.srp__loading {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+/* ── Reject form (inline) ── */
+.srp__reject-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+}
+
+.srp__reject-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #991b1b;
+}
+
+.srp__reject-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    background: white;
+    color: #1e293b;
+    font-size: 0.82rem;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.srp__reject-input:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+.srp__reject-input::placeholder {
+    color: #94a3b8;
+}
+
+.srp__reject-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.srp__reject-cancel {
+    padding: 5px 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.srp__reject-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.srp__reject-confirm {
+    padding: 5px 12px;
+    border: 1px solid #dc2626;
+    background: #dc2626;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.srp__reject-confirm:hover {
+    background: #b91c1c;
+}
+
+.srp__reject-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .srp__item-top {
+        flex-direction: column;
+    }
+
+    .srp__item-actions {
+        width: 100%;
+    }
+
+    .srp__approve-btn,
+    .srp__reject-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

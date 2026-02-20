@@ -1,22 +1,24 @@
 import { useState, useMemo } from 'react';
 import Header from '../../components/Header/Header';
-import DeptSection from '../../components/DeptSection/DeptSection';
+import AdminExecutiveGrid from '../../components/AdminExecutiveGrid/AdminExecutiveGrid';
 import AnimatedCounter from '../../components/AnimatedCounter/AnimatedCounter';
 import { currentMonthLabel } from '../../utils/semaforoUtils';
 import useDashboardData from '../../hooks/useDashboardData';
 import { useTasks } from '../../context/TaskContext';
 import { FiFilter, FiX, FiSearch, FiAlertCircle, FiClock, FiCheckCircle } from 'react-icons/fi';
+import StatusRequestsPanel from '../../components/StatusRequestsPanel/StatusRequestsPanel';
+import ObservationPrompt from '../../components/ObservationPrompt/ObservationPrompt';
 import './Dashboard.css';
 
 /* ── Semáforo card definitions ──
    Grouped by effective semáforo colors from getDeptStatus:
-   green = Realizado, blue = En Curso, yellow = Pendiente,
-   red = Atrasado, gray = No Realizado
+   green = Realizado, yellow = A tiempo (En Curso + Pendiente),
+   red = Atrasado (Atrasado + No Realizado)
 */
 const SEMAFORO_CARDS = [
     {
         key: 'atrasadas',
-        semColors: ['red', 'gray'],          // Atrasado + No Realizado
+        semColors: ['red'],
         label: 'Atrasadas',
         subtitle: 'Requieren atención inmediata',
         icon: FiAlertCircle,
@@ -25,20 +27,20 @@ const SEMAFORO_CARDS = [
         border: '#FECACA',
     },
     {
-        key: 'en_proceso',
-        semColors: ['blue'],                 // En Curso
-        label: 'En Proceso',
-        subtitle: 'En desarrollo o monitoreo',
+        key: 'a_tiempo',
+        semColors: ['yellow'],
+        label: 'A Tiempo',
+        subtitle: 'En curso o pendientes',
         icon: FiClock,
         color: '#F59E0B',
         bg: '#FFFBEB',
         border: '#FDE68A',
     },
     {
-        key: 'a_tiempo',
-        semColors: ['green', 'yellow'],      // Realizado + Pendiente
-        label: 'A Tiempo',
-        subtitle: 'Según planificación',
+        key: 'realizadas',
+        semColors: ['green'],
+        label: 'Realizadas',
+        subtitle: 'Completadas con éxito',
         icon: FiCheckCircle,
         color: '#10B981',
         bg: '#ECFDF5',
@@ -50,7 +52,7 @@ export default function Dashboard() {
     const [deptFilter, setDeptFilter] = useState('');
     const [search, setSearch] = useState('');
     const [semaforoFilter, setSemaforoFilter] = useState('');   // stores card key
-    const { getDeptStatus } = useTasks();
+    const { getDeptStatus, isAdmin, pendingObservation, confirmObservation, cancelObservation } = useTasks();
     const { departmentSections, allDeptNames, loading, error } = useDashboardData();
 
     /* ── Compute effective semáforo for each task (respects overrides) ── */
@@ -150,109 +152,116 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="dashboard page-enter">
-            <Header />
-            <main className="dashboard__content">
-                {/* ── Month banner ── */}
-                <section className="dashboard__month-banner">
-                    <div className="dashboard__month-info">
-                        <h2 className="dashboard__month-title">Actividades del Mes</h2>
-                        <span className="dashboard__month-badge">{currentMonthLabel} 2026</span>
-                    </div>
-                    <div className="dashboard__month-stats">
-                        <div className="dashboard__stat">
-                            <span className="dashboard__stat-value"><AnimatedCounter target={filtered.length} /></span>
-                            <span className="dashboard__stat-label">Departamentos</span>
+        <>
+            <div className="dashboard page-enter">
+                <Header />
+                <main className="dashboard__content">
+                    {/* ── Month banner ── */}
+                    <section className="dashboard__month-banner">
+                        <div className="dashboard__month-info">
+                            <h2 className="dashboard__month-title">Actividades del Mes</h2>
+                            <span className="dashboard__month-badge">{currentMonthLabel} 2026</span>
                         </div>
-                        <div className="dashboard__stat">
-                            <span className="dashboard__stat-value"><AnimatedCounter target={totalActivities} /></span>
-                            <span className="dashboard__stat-label">Actividades</span>
+                        <div className="dashboard__month-stats">
+                            <div className="dashboard__stat">
+                                <span className="dashboard__stat-value"><AnimatedCounter target={filtered.length} /></span>
+                                <span className="dashboard__stat-label">Departamentos</span>
+                            </div>
+                            <div className="dashboard__stat">
+                                <span className="dashboard__stat-value"><AnimatedCounter target={totalActivities} /></span>
+                                <span className="dashboard__stat-label">Actividades</span>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                {/* ── Semáforo Cards ── */}
-                <section className="dashboard__semaforo">
-                    {SEMAFORO_CARDS.map((card) => {
-                        const Icon = card.icon;
-                        const isActive = semaforoFilter === card.key;
-                        return (
-                            <button
-                                key={card.key}
-                                className={`dashboard__sem-card ${isActive ? 'dashboard__sem-card--active' : ''}`}
-                                style={{
-                                    '--sem-color': card.color,
-                                    '--sem-bg': card.bg,
-                                    '--sem-border': card.border,
-                                }}
-                                onClick={() => toggleSemaforoFilter(card.key)}
-                                title={isActive ? 'Quitar filtro' : `Filtrar por ${card.label}`}
-                            >
-                                <div className="dashboard__sem-card-header">
-                                    <Icon className="dashboard__sem-card-icon" />
-                                    <span className="dashboard__sem-card-label">{card.label}</span>
-                                </div>
-                                <span className="dashboard__sem-card-count">
-                                    <AnimatedCounter target={semaforoCounts[card.key]} />
-                                </span>
-                                <span className="dashboard__sem-card-sub">{card.subtitle}</span>
-                            </button>
-                        );
-                    })}
-                </section>
+                    {/* ── Semáforo Cards ── */}
+                    <section className="dashboard__semaforo">
+                        {SEMAFORO_CARDS.map((card) => {
+                            const Icon = card.icon;
+                            const isActive = semaforoFilter === card.key;
+                            return (
+                                <button
+                                    key={card.key}
+                                    className={`dashboard__sem-card ${isActive ? 'dashboard__sem-card--active' : ''}`}
+                                    style={{
+                                        '--sem-color': card.color,
+                                        '--sem-bg': card.bg,
+                                        '--sem-border': card.border,
+                                    }}
+                                    onClick={() => toggleSemaforoFilter(card.key)}
+                                    title={isActive ? 'Quitar filtro' : `Filtrar por ${card.label}`}
+                                >
+                                    <div className="dashboard__sem-card-header">
+                                        <Icon className="dashboard__sem-card-icon" />
+                                        <span className="dashboard__sem-card-label">{card.label}</span>
+                                    </div>
+                                    <span className="dashboard__sem-card-count">
+                                        <AnimatedCounter target={semaforoCounts[card.key]} />
+                                    </span>
+                                    <span className="dashboard__sem-card-sub">{card.subtitle}</span>
+                                </button>
+                            );
+                        })}
+                    </section>
 
-                {/* ── Filters ── */}
-                <section className="dashboard__filters">
-                    <div className="dashboard__filter-row">
-                        <FiFilter className="dashboard__filter-icon" />
+                    {/* ── Filters ── */}
+                    <section className="dashboard__filters">
+                        <div className="dashboard__filter-row">
+                            <FiFilter className="dashboard__filter-icon" />
 
-                        <div className="dashboard__select-wrap">
-                            <select
-                                className="dashboard__select"
-                                value={deptFilter}
-                                onChange={(e) => setDeptFilter(e.target.value)}
-                            >
-                                <option value="">Todos los departamentos</option>
-                                {allDeptNames.map((n) => (
-                                    <option key={n} value={n}>{n}</option>
-                                ))}
-                            </select>
+                            <div className="dashboard__select-wrap">
+                                <select
+                                    className="dashboard__select"
+                                    value={deptFilter}
+                                    onChange={(e) => setDeptFilter(e.target.value)}
+                                >
+                                    <option value="">Todos los departamentos</option>
+                                    {allDeptNames.map((n) => (
+                                        <option key={n} value={n}>{n}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="dashboard__search-wrap">
+                                <FiSearch className="dashboard__search-icon" />
+                                <input
+                                    className="dashboard__search"
+                                    type="text"
+                                    placeholder="Buscar actividad..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+
+                            {hasFilters && (
+                                <button className="dashboard__clear-btn" onClick={clearAll}>
+                                    <FiX /> Limpiar
+                                </button>
+                            )}
                         </div>
+                    </section>
 
-                        <div className="dashboard__search-wrap">
-                            <FiSearch className="dashboard__search-icon" />
-                            <input
-                                className="dashboard__search"
-                                type="text"
-                                placeholder="Buscar actividad..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        {hasFilters && (
-                            <button className="dashboard__clear-btn" onClick={clearAll}>
-                                <FiX /> Limpiar
-                            </button>
-                        )}
-                    </div>
-                </section>
-
-                {/* ── Department sections ── */}
-                <section className="dashboard__departments">
-                    {filtered.length === 0 ? (
-                        <div className="dashboard__empty">
-                            <span className="dashboard__empty-icon">🔍</span>
-                            <p>No se encontraron departamentos</p>
-                            <button className="dashboard__empty-btn" onClick={clearAll}>Limpiar filtros</button>
-                        </div>
-                    ) : (
-                        filtered.map((dept) => (
-                            <DeptSection key={dept.name} department={dept} />
-                        ))
+                    {/* ── Admin: Status Requests Panel ── */}
+                    {isAdmin && (
+                        <section className="dashboard__requests">
+                            <StatusRequestsPanel />
+                        </section>
                     )}
-                </section>
-            </main>
-        </div>
+
+                    {/* ── Executive Grid ── */}
+                    <section className="dashboard__departments">
+                        <AdminExecutiveGrid sections={filtered} />
+                    </section>
+                </main>
+            </div>
+            {pendingObservation && (
+                <ObservationPrompt
+                    currentStatus={pendingObservation.currentStatus}
+                    activityName={pendingObservation.taskName}
+                    onConfirm={confirmObservation}
+                    onCancel={cancelObservation}
+                />
+            )}
+        </>
     );
 }

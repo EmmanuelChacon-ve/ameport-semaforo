@@ -371,6 +371,10 @@
 .cgantt__td--sem {
     padding: 6px 8px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .cgantt__sem-pill {

@@ -25,6 +25,12 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.sidebar__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .sidebar__logo {
     display: flex;
     align-items: center;
@@ -125,6 +131,42 @@
 
 .sidebar__link-label {
     white-space: nowrap;
+}
+
+/* ── Unread observation dot ── */
+.sidebar__unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    margin-left: auto;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    animation: sidebar-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sidebar-dot-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    }
+
+    50% {
+        opacity: 0.6;
+        box-shadow: 0 0 3px rgba(239, 68, 68, 0.3);
+    }
+}
+
+/* When sidebar is collapsed, position dot over the icon */
+.sidebar--collapsed .sidebar__unread-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    margin-left: 0;
+    width: 7px;
+    height: 7px;
 }
 
 /* ── Group Toggle (Departamentos) ── */

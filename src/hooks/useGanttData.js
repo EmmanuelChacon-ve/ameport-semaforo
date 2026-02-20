@@ -12,6 +12,7 @@ export default function useGanttData(departmentName) {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryColors, setCategoryColors] = useState({});
+  const [allDepartments, setAllDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,6 +24,8 @@ export default function useGanttData(departmentName) {
         fetchActivities(departmentName),
         fetchDepartmentsMetadata(),
       ]);
+
+      setAllDepartments(departments);
 
       // Find this department's metadata
       const dept = departments.find((d) => d.name === departmentName);
@@ -49,12 +52,21 @@ export default function useGanttData(departmentName) {
       setCategories(deptCategories);
       setCategoryColors(deptCategoryColors);
 
-      // Apply semaforo calculation
+      // Apply semaforo calculation + derive startMonth/endMonth from months[]
       const CURRENT_MONTH = new Date().getMonth();
-      const withSemaforo = activities.map((t) => ({
-        ...t,
-        semaforo: calculateSemaforo(t, CURRENT_MONTH),
-      }));
+      const withSemaforo = activities.map((t) => {
+        const extra = {};
+        // Derive startMonth/endMonth for months[] format tasks (Mantenimiento, Consumo)
+        if (Array.isArray(t.months) && t.months.length > 0 && (t.startMonth == null || t.endMonth == null)) {
+          extra.startMonth = Math.min(...t.months);
+          extra.endMonth = Math.max(...t.months);
+        }
+        return {
+          ...t,
+          ...extra,
+          semaforo: calculateSemaforo(t, CURRENT_MONTH),
+        };
+      });
 
       setTasks(withSemaforo);
       setError(null);
@@ -79,5 +91,5 @@ export default function useGanttData(departmentName) {
   // refetch without showing loading spinner
   const refetch = useCallback(() => load(false), [load]);
 
-  return { tasks, categories, categoryColors, loading, error, refetch };
+  return { tasks, categories, categoryColors, departments: allDepartments, loading, error, refetch };
 }

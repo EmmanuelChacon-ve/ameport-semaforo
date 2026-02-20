@@ -18,8 +18,11 @@ import {
     FiX,
     FiLogOut,
 } from 'react-icons/fi';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import useObservationRead from '../../hooks/useObservationRead';
+import { fetchAllActivities } from '../../services/api';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import './Sidebar.css';
 
 const topItems = [
@@ -44,7 +47,30 @@ export default function Sidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [deptsOpen, setDeptsOpen] = useState(true);
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user, token, logout } = useAuth();
+    const { hasUnread } = useObservationRead();
+
+    // ── Fetch activities to determine unread observations per dept ──
+    const [activities, setActivities] = useState([]);
+
+    useEffect(() => {
+        if (!token) return;
+        fetchAllActivities()
+            .then(setActivities)
+            .catch((err) => console.error('Sidebar: error cargando actividades:', err));
+    }, [token]);
+
+    // Build a Set of department names that have at least one activity with unread observations
+    const deptsWithUnread = useMemo(() => {
+        const result = new Set();
+        activities.forEach((act) => {
+            const obsCount = act.observations?.length || 0;
+            if (obsCount > 0 && hasUnread(act.id, obsCount)) {
+                result.add(act.department);
+            }
+        });
+        return result;
+    }, [activities, hasUnread]);
 
     // Filtrar departamentos según permisos del usuario
     const visibleDepts = user?.role === 'admin'
@@ -76,6 +102,9 @@ export default function Sidebar() {
         >
             <span className="sidebar__link-icon">{item.icon}</span>
             {!collapsed && <span className="sidebar__link-label">{item.label}</span>}
+            {item.deptKey && deptsWithUnread.has(item.deptKey) && (
+                <span className="sidebar__unread-dot" title="Observaciones sin leer" />
+            )}
         </NavLink>
     );
 
@@ -104,22 +133,25 @@ export default function Sidebar() {
                         <span className="sidebar__logo-icon">🚦</span>
                         {!collapsed && <span className="sidebar__logo-text">Semáforo</span>}
                     </div>
-                    {/* Desktop collapsed toggle */}
-                    <button
-                        className="sidebar__toggle"
-                        onClick={() => setCollapsed(!collapsed)}
-                        aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-                    >
-                        {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
-                    </button>
-                    {/* Mobile close */}
-                    <button
-                        className="sidebar__mobile-close"
-                        onClick={() => setMobileOpen(false)}
-                        aria-label="Cerrar menú"
-                    >
-                        <FiX />
-                    </button>
+                    <div className="sidebar__header-actions">
+                        {!collapsed && <NotificationBell />}
+                        {/* Desktop collapsed toggle */}
+                        <button
+                            className="sidebar__toggle"
+                            onClick={() => setCollapsed(!collapsed)}
+                            aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+                        >
+                            {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+                        </button>
+                        {/* Mobile close */}
+                        <button
+                            className="sidebar__mobile-close"
+                            onClick={() => setMobileOpen(false)}
+                            aria-label="Cerrar menú"
+                        >
+                            <FiX />
+                        </button>
+                    </div>
                 </div>
 
                 <nav className="sidebar__nav">

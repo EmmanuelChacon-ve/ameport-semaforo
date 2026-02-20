@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { FiBarChart2, FiCalendar, FiCheckCircle, FiClock, FiAlertCircle, FiTrendingUp } from 'react-icons/fi';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { currentMonthLabel } from '../../utils/semaforoUtils';
 import useDashboardData from '../../hooks/useDashboardData';
 import { useTasks } from '../../context/TaskContext';
@@ -166,6 +167,74 @@ export default function Reportes() {
                             <span className="reportes__card-value"><AnimatedCounter target={totals.delayed} /></span>
                             <span className="reportes__card-label">Atrasadas</span>
                         </div>
+                    </div>
+                </section>
+
+                {/* ── Charts ── */}
+                <section className="reportes__charts">
+                    {/* Semáforo Distribution Donut */}
+                    <div className="reportes__chart-card">
+                        <h2 className="reportes__section-title">Distribución de Estados</h2>
+                        <ResponsiveContainer width="100%" height={280}>
+                            <PieChart>
+                                <Pie
+                                    data={[
+                                        { name: 'Realizadas', value: totals.completed, color: '#10B981' },
+                                        { name: 'En Proceso', value: totals.inProgress, color: '#F59E0B' },
+                                        { name: 'Atrasadas', value: totals.delayed, color: '#EF4444' },
+                                    ].filter(d => d.value > 0)}
+                                    cx="50%" cy="50%"
+                                    innerRadius={65} outerRadius={105}
+                                    paddingAngle={4}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {[
+                                        { color: '#10B981' },
+                                        { color: '#F59E0B' },
+                                        { color: '#EF4444' },
+                                    ].filter((_, i) => [totals.completed, totals.inProgress, totals.delayed][i] > 0)
+                                        .map((entry, i) => (
+                                            <Cell key={i} fill={entry.color} />
+                                        ))}
+                                </Pie>
+                                <Tooltip
+                                    formatter={(value, name) => [`${value} actividades`, name]}
+                                    contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.82rem' }}
+                                />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    iconType="circle"
+                                    iconSize={10}
+                                    wrapperStyle={{ fontSize: '0.82rem', paddingTop: 12 }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Department Progress Bar Chart */}
+                    <div className="reportes__chart-card">
+                        <h2 className="reportes__section-title">Avance por Departamento</h2>
+                        <ResponsiveContainer width="100%" height={280}>
+                            <BarChart
+                                data={ranked.map(d => ({ name: d.name.length > 12 ? d.name.slice(0, 12) + '…' : d.name, '% Avance': d.pct, fill: d.color }))}
+                                layout="vertical"
+                                margin={{ top: 0, right: 24, bottom: 0, left: 8 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12, fill: '#475569' }} />
+                                <Tooltip
+                                    formatter={(value) => [`${value}%`, 'Cumplimiento']}
+                                    contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.82rem' }}
+                                />
+                                <Bar dataKey="% Avance" radius={[0, 6, 6, 0]} barSize={20}>
+                                    {ranked.map((dept, i) => (
+                                        <Cell key={i} fill={dept.color} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </section>
 

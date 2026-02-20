@@ -60,7 +60,7 @@ export default function DeptSection({ department }) {
                                                     '--pill-color': color,
                                                     '--pill-bg': `${color}15`,
                                                 }}
-                                                onClick={isAdmin ? () => cycleDeptStatus(task.id, task.semaforo) : undefined}
+                                                onClick={isAdmin ? () => cycleDeptStatus(task.id, task.semaforo, task.name) : undefined}
                                                 title={isAdmin ? 'Click para cambiar estado' : undefined}
                                             >
                                                 <span className="dept-section__pill-dot" />

@@ -24,3 +24,66 @@
     /* Space for hamburger button */
   }
 }
+
+/* ── Eye icon button for activity detail navigation ── */
+.gantt__detail-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.gantt__detail-btn:hover {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+/* ── Actions column ── */
+.gantt__td--actions {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  text-align: center;
+  padding: 0 4px !important;
+}
+
+/* ── Print button (shared across all grids) ── */
+.grid-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.grid-print-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.grid-print-btn:active {
+  transform: scale(0.97);
+}
+
+.grid-print-btn svg {
+  flex-shrink: 0;
+}

@@ -1,0 +1,219 @@
+.obs-prompt-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: obs-fadeIn 0.15s ease;
+}
+
+@keyframes obs-fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.obs-prompt {
+    background: #1e2128;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 440px;
+    padding: 28px;
+    animation: obs-slideUp 0.2s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes obs-slideUp {
+    from {
+        transform: translateY(16px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.obs-prompt__icon {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.obs-prompt__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0 0 4px;
+    text-align: center;
+}
+
+.obs-prompt__subtitle {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin: 0 0 20px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.obs-prompt__current {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+.obs-prompt__label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── Status grid ── */
+.obs-prompt__status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.obs-prompt__status-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.obs-prompt__status-btn:hover:not(:disabled) {
+    border-color: var(--st-color);
+    color: var(--st-color);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.obs-prompt__status-btn--active {
+    border-color: var(--st-color) !important;
+    color: var(--st-color) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.05), inset 0 0 0 1px var(--st-color);
+}
+
+.obs-prompt__status-btn--current {
+    opacity: 0.35;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.obs-prompt__status-btn--current::after {
+    content: '(actual)';
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: auto;
+}
+
+.obs-prompt__status-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* last button in odd count fills full row */
+.obs-prompt__status-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+/* ── Textarea ── */
+.obs-prompt__textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+}
+
+.obs-prompt__textarea:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.obs-prompt__textarea::placeholder {
+    color: #475569;
+}
+
+/* ── Actions ── */
+.obs-prompt__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.obs-prompt__cancel {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.obs-prompt__cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.obs-prompt__confirm {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: #fff;
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.obs-prompt__confirm:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.obs-prompt__confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}

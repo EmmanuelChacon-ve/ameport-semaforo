@@ -384,6 +384,10 @@
 .crgantt__td--sem {
     padding: 8px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .crgantt__sem-pill {

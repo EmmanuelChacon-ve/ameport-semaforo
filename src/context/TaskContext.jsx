@@ -20,26 +20,22 @@ const DEPT_STATUS_ORDER = [
 /* ── Map manual status → semáforo color key ── */
 const STATUS_TO_SEMAFORO = {
     [STATUS.REALIZADO]: 'green',
-    [STATUS.EN_CURSO]: 'blue',
+    [STATUS.EN_CURSO]: 'yellow',
     [STATUS.PENDIENTE]: 'yellow',
     [STATUS.ATRASADO]: 'red',
-    [STATUS.NO_REALIZADO]: 'gray',
+    [STATUS.NO_REALIZADO]: 'red',
 };
 
 const DEPT_SEMAFORO_COLORS = {
     green: '#10B981',
-    blue: '#3B82F6',
     yellow: '#F59E0B',
     red: '#EF4444',
-    gray: '#6B7280',
 };
 
 const DEPT_SEMAFORO_LABELS = {
     green: 'Realizado',
-    blue: 'En Curso',
-    yellow: 'Pendiente',
+    yellow: 'A tiempo',
     red: 'Atrasado',
-    gray: 'No Realizado',
 };
 
 /**
@@ -132,7 +128,15 @@ export function TaskProvider({ children }) {
             ]);
             const { tasks: apiTasks, apiOverrides } = buildInitialTasks(departments, activities);
             setTasks(apiTasks);
-            setDeptOverrides((prev) => ({ ...prev, ...apiOverrides }));
+            // Build overrides from ALL activities (not just isActiveThisMonth)
+            // so every dept task's manualStatus is up-to-date from the API.
+            const allOverrides = {};
+            activities.forEach((act) => {
+                if (act.manualStatus) {
+                    allOverrides[act.id] = act.manualStatus;
+                }
+            });
+            setDeptOverrides(allOverrides);
         } catch (err) {
             console.error('Error cargando tareas desde el API:', err);
             const cached = loadTasks();
@@ -158,15 +162,51 @@ export function TaskProvider({ children }) {
     }, [deptOverrides]);
 
     // Helper to persist status to Firestore (admin only, fire-and-forget)
-    const persistStatus = useCallback((originalId, manualStatus) => {
+    const persistStatus = useCallback((originalId, manualStatus, observation) => {
         if (!isAdmin || !token) return;
-        updateActivityStatus(originalId, manualStatus, token).catch((err) =>
+        updateActivityStatus(originalId, manualStatus, token, observation).catch((err) =>
             console.error('Error persistiendo estado:', err)
         );
     }, [isAdmin, token]);
 
+    /* ── Observation prompt state for status changes ── */
+    const [pendingObservation, setPendingObservation] = useState(null);
+    // pendingObservation = { type: 'dashboard'|'dept', taskId, taskName, currentStatus }
+
+    const confirmObservation = useCallback((selectedStatus, observationText) => {
+        if (!pendingObservation) return;
+        const { type, taskId } = pendingObservation;
+
+        if (type === 'dashboard') {
+            const task = tasks.find((t) => t.id === taskId);
+            if (task?.originalId) {
+                persistStatus(task.originalId, selectedStatus, observationText);
+            }
+            setTasks((prev) =>
+                prev.map((t) => (t.id === taskId ? { ...t, estado: selectedStatus } : t))
+            );
+        } else if (type === 'dept') {
+            persistStatus(taskId, selectedStatus, observationText);
+            setDeptOverrides((prev) => ({ ...prev, [taskId]: selectedStatus }));
+        }
+
+        setPendingObservation(null);
+    }, [pendingObservation, persistStatus, tasks]);
+
+    const cancelObservation = useCallback(() => {
+        setPendingObservation(null);
+    }, []);
+
     const updateTaskStatus = useCallback((taskId, newStatus) => {
         if (!isAdmin) return;  // Coordinators cannot change status
+
+        // If changing to Atrasado or No Realizado, require observation
+        if (newStatus === 'Atrasado' || newStatus === 'No Realizado') {
+            const task = tasks.find((t) => t.id === taskId);
+            setPendingObservation({ type: 'dashboard', taskId, status: newStatus, taskName: task?.actividad || '' });
+            return;
+        }
+
         setTasks((prev) => {
             const task = prev.find((t) => t.id === taskId);
             if (task?.originalId) {
@@ -174,37 +214,28 @@ export function TaskProvider({ children }) {
             }
             return prev.map((t) => (t.id === taskId ? { ...t, estado: newStatus } : t));
         });
-    }, [persistStatus, isAdmin]);
+    }, [persistStatus, isAdmin, tasks]);
 
     const cycleStatus = useCallback((taskId) => {
-        if (!isAdmin) return;  // Coordinators cannot change status
-        const statusOrder = [
-            STATUS.NO_REALIZADO,
-            STATUS.PENDIENTE,
-            STATUS.EN_CURSO,
-            STATUS.ATRASADO,
-            STATUS.REALIZADO,
-        ];
-        setTasks((prev) =>
-            prev.map((t) => {
-                if (t.id !== taskId) return t;
-                const currentIdx = statusOrder.indexOf(t.estado);
-                const nextIdx = (currentIdx + 1) % statusOrder.length;
-                const newStatus = statusOrder[nextIdx];
-                if (t.originalId) {
-                    persistStatus(t.originalId, newStatus);
-                }
-                return { ...t, estado: newStatus };
-            })
-        );
-    }, [persistStatus, isAdmin]);
+        if (!isAdmin) return;
+        const task = tasks.find((t) => t.id === taskId);
+        if (!task) return;
+        setPendingObservation({ type: 'dashboard', taskId, taskName: task.actividad || '', currentStatus: task.estado });
+    }, [isAdmin, tasks]);
 
     /* ── Department Gantt override functions ── */
 
     // Get effective semáforo for a dept task (override wins over auto)
+    // AUTO-ATRASADO: if auto-calc says 'red' (overdue) and manual status
+    // is NOT 'Realizado', force red — so overdue tasks can't stay green/yellow.
     const getDeptStatus = useCallback((taskId, autoSemaforo) => {
         const override = deptOverrides[taskId];
-        if (override) return STATUS_TO_SEMAFORO[override];
+        if (override) {
+            if (autoSemaforo === 'red' && override !== 'Realizado') {
+                return 'red';
+            }
+            return STATUS_TO_SEMAFORO[override];
+        }
         return autoSemaforo;
     }, [deptOverrides]);
 
@@ -215,27 +246,19 @@ export function TaskProvider({ children }) {
         persistStatus(taskId, newStatus);
     }, [persistStatus, isAdmin]);
 
-    // Cycle through statuses on click
-    const cycleDeptStatus = useCallback((taskId, currentAutoSemaforo) => {
-        if (!isAdmin) return;  // Coordinators cannot change status
-        setDeptOverrides((prev) => {
-            const currentOverride = prev[taskId];
-            let currentStatus;
-            if (currentOverride) {
-                currentStatus = currentOverride;
-            } else {
-                // Map auto semáforo back to a STATUS value
-                const semToStatus = { green: STATUS.REALIZADO, yellow: STATUS.PENDIENTE, red: STATUS.ATRASADO };
-                currentStatus = semToStatus[currentAutoSemaforo] || STATUS.PENDIENTE;
-            }
-            const idx = DEPT_STATUS_ORDER.indexOf(currentStatus);
-            const nextIdx = (idx + 1) % DEPT_STATUS_ORDER.length;
-            const newStatus = DEPT_STATUS_ORDER[nextIdx];
-            // Persist to Firestore
-            persistStatus(taskId, newStatus);
-            return { ...prev, [taskId]: newStatus };
-        });
-    }, [persistStatus, isAdmin]);
+    // Open status change modal on click (no more auto-cycling)
+    const cycleDeptStatus = useCallback((taskId, currentAutoSemaforo, taskName) => {
+        if (!isAdmin) return;
+        const currentOverride = deptOverrides[taskId];
+        let currentStatus;
+        if (currentOverride) {
+            currentStatus = currentOverride;
+        } else {
+            const semToStatus = { green: STATUS.REALIZADO, blue: STATUS.EN_CURSO, yellow: STATUS.PENDIENTE, red: STATUS.ATRASADO, gray: STATUS.NO_REALIZADO };
+            currentStatus = semToStatus[currentAutoSemaforo] || STATUS.PENDIENTE;
+        }
+        setPendingObservation({ type: 'dept', taskId, taskName: taskName || '', currentStatus });
+    }, [isAdmin, deptOverrides]);
 
     // Clear override (revert to auto)
     const clearDeptOverride = useCallback((taskId) => {
@@ -338,6 +361,10 @@ export function TaskProvider({ children }) {
         deptOverrides,
         DEPT_SEMAFORO_COLORS,
         DEPT_SEMAFORO_LABELS,
+        // Observation prompt
+        pendingObservation,
+        confirmObservation,
+        cancelObservation,
     };
 
     return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

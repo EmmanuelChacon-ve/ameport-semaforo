@@ -123,8 +123,8 @@ export function calculateSemaforo(task, currentMonth = CURRENT_MONTH) {
   if (task.startMonth !== undefined && task.endMonth !== undefined) {
     if (currentMonth < task.startMonth) return 'green';
     if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'green';
-    if (currentMonth === task.endMonth + 1) return 'yellow';
-    if (currentMonth > task.endMonth + 1) return 'red';
+    // Past endMonth → overdue
+    if (currentMonth > task.endMonth) return 'red';
     return 'green';
   }
 
@@ -151,9 +151,9 @@ export const monthNames = [
 ];
 
 export const statusLabels = {
-  green: 'A tiempo',
-  yellow: 'En cierre',
-  red: 'Atrasado',
+  green: 'Realizadas',
+  yellow: 'A tiempo',
+  red: 'Atrasadas',
 };
 
 export const semaforoColors = {

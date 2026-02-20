@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
+import { ObsReadProvider } from './hooks/useObservationRead';
 import DeptRoute from './components/DeptRoute/DeptRoute';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import AdminRoute from './components/AdminRoute/AdminRoute';
@@ -17,6 +18,7 @@ import Finanzas from './pages/Finanzas/Finanzas';
 import Crecimiento from './pages/Crecimiento/Crecimiento';
 import Consumo from './pages/Consumo/Consumo';
 import Reportes from './pages/Reportes/Reportes';
+import ActivityDetail from './pages/ActivityDetail/ActivityDetail';
 import NotFound from './pages/NotFound/NotFound';
 import './App.css';
 
@@ -37,6 +39,7 @@ function AppLayout() {
           <Route path="/finanzas" element={<DeptRoute deptKey="Finanzas"><Finanzas /></DeptRoute>} />
           <Route path="/crecimiento" element={<DeptRoute deptKey="Crecimiento"><Crecimiento /></DeptRoute>} />
           <Route path="/consumo" element={<DeptRoute deptKey="Consumo"><Consumo /></DeptRoute>} />
+          <Route path="/actividad/:id" element={<ActivityDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
@@ -49,17 +52,19 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <TaskProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <ObsReadProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </ObsReadProvider>
         </TaskProvider>
       </AuthProvider>
     </BrowserRouter>

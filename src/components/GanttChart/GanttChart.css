@@ -225,6 +225,13 @@
     font-weight: 500;
 }
 
+.gantt__toolbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 /* ── Create button ── */
 .gantt__create-btn {
     display: flex;
@@ -360,6 +367,10 @@
 .gantt__td--status {
     padding: 8px 10px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .gantt__status-pill {

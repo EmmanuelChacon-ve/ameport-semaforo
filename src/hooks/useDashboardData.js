@@ -51,8 +51,7 @@ export default function useDashboardData() {
             .map((task) => {
               const semaforo = calculateSemaforo(task, CURRENT_MONTH);
               return {
-                id: task.id,
-                name: task.name,
+                ...task,
                 semaforo,
                 status: semaforoToStatus(semaforo),
                 category: task.category || '',

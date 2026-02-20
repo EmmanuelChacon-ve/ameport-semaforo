@@ -1,0 +1,962 @@
+/* ═══════════════════════════════════════════════════════════
+   ActivityDetail — Full-page milestone/subtask view
+   Dark-themed executive panel matching reference design
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Loading & Error states ── */
+.act-detail__loading,
+.act-detail__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+    color: #94a3b8;
+}
+
+.act-detail__spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: detailSpin 0.8s linear infinite;
+}
+
+@keyframes detailSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.act-detail__error svg {
+    color: #ef4444;
+}
+
+.act-detail__error button {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ── Container ── */
+.act-detail {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ── Back button ── */
+.act-detail__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 20px;
+}
+
+.act-detail__back:hover {
+    background: #f8fafc;
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+/* ── Layout ── */
+.act-detail__layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── Header ── */
+.act-detail__header {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.act-detail__title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 10px 0;
+    line-height: 1.3;
+}
+
+.act-detail__meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.act-detail__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    padding: 4px 12px;
+    background: #f8fafc;
+    border-radius: 20px;
+}
+
+/* ── Timeline ── */
+.act-detail__timeline-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.act-detail__timeline-bar {
+    position: relative;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: visible;
+    margin-bottom: 10px;
+}
+
+.act-detail__timeline-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.act-detail__timeline-today {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.act-detail__timeline-today-dot {
+    display: block;
+    width: 14px;
+    height: 14px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2.5px solid white;
+    box-shadow: 0 0 0 2px #22c55e40, 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.act-detail__timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.act-detail__timeline-labels span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.act-detail__timeline-today-label {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+/* ── Sections ── */
+.act-detail__section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.act-detail__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.act-detail__section-header h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.act-detail__progress-badge {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #6366f1;
+    background: #6366f118;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* ── Progress bar (milestones) ── */
+.act-detail__progress-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.act-detail__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* ══ MILESTONE CARD ══ */
+.act-detail__milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.act-detail__milestone-card {
+    border-radius: 14px;
+    border: 1px solid #f1f5f9;
+    overflow: hidden;
+    animation: mileFadeIn 0.3s ease both;
+    transition: all 0.15s;
+}
+
+@keyframes mileFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.act-detail__milestone-card:hover {
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.act-detail__milestone-card--done {
+    background: #f0fdf4;
+    border-color: #dcfce7;
+}
+
+/* ── Main row ── */
+.act-detail__milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.act-detail__milestone-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.act-detail__milestone-check:disabled {
+    cursor: default;
+}
+
+.act-detail__milestone-card--done .act-detail__milestone-check {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.act-detail__milestone-check:not(:disabled):hover {
+    border-color: #6366f1;
+    background: #6366f118;
+}
+
+.act-detail__milestone-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.act-detail__milestone-order {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    min-width: 24px;
+}
+
+.act-detail__milestone-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.act-detail__milestone-title--done {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+/* ── Date badge ── */
+.act-detail__milestone-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6366f1;
+    background: #6366f110;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Expand button ── */
+.act-detail__milestone-expand {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.act-detail__milestone-expand:hover {
+    background: #f1f5f9;
+    color: #6366f1;
+}
+
+.act-detail__comment-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+/* ── Delete button ── */
+.act-detail__milestone-delete {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.act-detail__milestone-card:hover .act-detail__milestone-delete {
+    opacity: 1;
+}
+
+.act-detail__milestone-delete:hover {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+/* ── Edit button ── */
+.act-detail__milestone-edit-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.act-detail__milestone-card:hover .act-detail__milestone-edit-btn {
+    opacity: 1;
+}
+
+.act-detail__milestone-edit-btn:hover {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+/* ── Inline edit row ── */
+.act-detail__milestone-edit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.act-detail__edit-title {
+    flex: 1;
+    padding: 7px 12px;
+    border: 1.5px solid #6366f1;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    background: white;
+    min-width: 0;
+}
+
+.act-detail__edit-date {
+    padding: 7px 10px;
+    border: 1.5px solid #6366f1;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    outline: none;
+    background: white;
+    cursor: pointer;
+}
+
+.act-detail__edit-save {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #22c55e;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.act-detail__edit-save:hover:not(:disabled) {
+    background: #16a34a;
+}
+
+.act-detail__edit-save:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.act-detail__edit-cancel {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.act-detail__edit-cancel:hover {
+    background: #e2e8f0;
+    color: #ef4444;
+}
+
+/* ══ INLINE COMMENTS ══ */
+.act-detail__milestone-comments {
+    padding: 0 16px 14px 56px;
+    border-top: 1px solid #f1f5f9;
+    animation: commentsFadeIn 0.2s ease;
+}
+
+@keyframes commentsFadeIn {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+.act-detail__milestone-comments-empty {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin: 10px 0 4px 0;
+}
+
+.act-detail__comment {
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.act-detail__comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+
+.act-detail__comment-author {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.act-detail__comment-date {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+.act-detail__comment-text {
+    font-size: 0.8rem;
+    color: #475569;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Comment input ── */
+.act-detail__comment-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.act-detail__comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    color: #334155;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.act-detail__comment-input:focus {
+    border-color: #6366f1;
+}
+
+.act-detail__comment-input::placeholder {
+    color: #94a3b8;
+}
+
+.act-detail__comment-send {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.act-detail__comment-send:hover:not(:disabled) {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.act-detail__comment-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Add milestone form ── */
+.act-detail__add-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.act-detail__add-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #334155;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.act-detail__add-input:focus {
+    border-color: #6366f1;
+    background: white;
+}
+
+.act-detail__add-input::placeholder {
+    color: #94a3b8;
+}
+
+.act-detail__add-date {
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.act-detail__add-date:focus {
+    border-color: #6366f1;
+    background: white;
+}
+
+.act-detail__add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.act-detail__add-btn:hover:not(:disabled) {
+    background: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.act-detail__add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Empty state ── */
+.act-detail__empty {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 24px 0;
+}
+
+/* ══ OBSERVATIONS SECTION ══ */
+.act-detail__obs-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.act-detail__obs-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #334155;
+    background: #f8fafc;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.act-detail__obs-textarea:focus {
+    border-color: #6366f1;
+    background: white;
+}
+
+.act-detail__obs-textarea::placeholder {
+    color: #94a3b8;
+}
+
+.act-detail__obs-submit {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 10px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.act-detail__obs-submit:hover:not(:disabled) {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.act-detail__obs-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.act-detail__obs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.act-detail__obs-item {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.act-detail__obs-item--delay_reason {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.act-detail__obs-item--status_change {
+    border-left-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.act-detail__obs-item--general {
+    border-left-color: #6366f1;
+}
+
+.act-detail__obs-text {
+    font-size: 0.82rem;
+    color: #334155;
+    margin: 0 0 8px 0;
+    line-height: 1.5;
+}
+
+.act-detail__obs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.act-detail__obs-author {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.act-detail__obs-type {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #64748b;
+    background: #e2e8f0;
+}
+
+.act-detail__obs-type--delay_reason {
+    color: #ef4444;
+    background: #fee2e2;
+}
+
+.act-detail__obs-type--status_change {
+    color: #3b82f6;
+    background: #dbeafe;
+}
+
+.act-detail__obs-type--general {
+    color: #6366f1;
+    background: #e0e7ff;
+}
+
+/* ══ SIDEBAR ══ */
+.act-detail__sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+.act-detail__info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 16px;
+}
+
+.act-detail__info-card h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 16px 0;
+}
+
+.act-detail__info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.act-detail__info-row:last-child {
+    border-bottom: none;
+}
+
+.act-detail__info-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.act-detail__info-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: right;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.act-detail__info-value--highlight {
+    color: #6366f1;
+    font-weight: 800;
+}
+
+.act-detail__info-value--red {
+    color: #ef4444;
+}
+
+.act-detail__info-value--yellow {
+    color: #f59e0b;
+}
+
+.act-detail__info-value--green {
+    color: #22c55e;
+}
+
+.act-detail__info-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--status-color, #64748b);
+    background: color-mix(in srgb, var(--status-color, #64748b) 12%, white);
+}
+
+.act-detail__info-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--status-color, #64748b);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .act-detail__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .act-detail__sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .act-detail {
+        padding: 16px;
+    }
+
+    .act-detail__header,
+    .act-detail__section,
+    .act-detail__timeline-card {
+        padding: 16px;
+    }
+
+    .act-detail__add-form {
+        flex-direction: column;
+    }
+
+    .act-detail__milestone-comments {
+        padding-left: 16px;
+    }
+}
