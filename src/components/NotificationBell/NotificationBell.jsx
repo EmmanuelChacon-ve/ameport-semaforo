@@ -177,52 +177,55 @@ function NotificationBellInner({ token }) {
     const count = notifications.length;
 
     const panel = open ? createPortal(
-        <div
-            className="notif-bell__panel"
-            ref={panelRef}
-            style={{ top: panelPos.top, left: panelPos.left }}
-        >
-            <div className="notif-bell__header">
-                <span className="notif-bell__title">Notificaciones</span>
-                {count > 0 && (
-                    <button className="notif-bell__clear-btn" onClick={dismissAll} title="Limpiar todas">
-                        <FiTrash2 /> Limpiar
-                    </button>
-                )}
-            </div>
-            <div className="notif-bell__list">
-                {count === 0 ? (
-                    <div className="notif-bell__empty">
-                        <span>🎉</span>
-                        <p>Sin notificaciones</p>
-                    </div>
-                ) : (
-                    notifications.map((n) => (
-                        <div key={n.id} className="notif-bell__item-row">
-                            <button
-                                className="notif-bell__item"
-                                onClick={() => handleClick(n)}
-                            >
-                                <span className="notif-bell__item-icon" style={{ color: n.color, background: `${n.color}15` }}>
-                                    {n.icon}
-                                </span>
-                                <div className="notif-bell__item-body">
-                                    <span className="notif-bell__item-text">{n.text}</span>
-                                    <span className="notif-bell__item-sub">{n.sub}</span>
-                                </div>
-                            </button>
-                            <button
-                                className="notif-bell__dismiss-btn"
-                                onClick={(e) => dismissOne(e, n.id)}
-                                title="Descartar"
-                            >
-                                ✕
-                            </button>
+        <>
+            <div className="notif-bell__backdrop" onClick={() => setOpen(false)} />
+            <div
+                className="notif-bell__panel"
+                ref={panelRef}
+                style={{ top: panelPos.top, left: panelPos.left }}
+            >
+                <div className="notif-bell__header">
+                    <span className="notif-bell__title">Notificaciones</span>
+                    {count > 0 && (
+                        <button className="notif-bell__clear-btn" onClick={dismissAll} title="Limpiar todas">
+                            <FiTrash2 /> Limpiar
+                        </button>
+                    )}
+                </div>
+                <div className="notif-bell__list">
+                    {count === 0 ? (
+                        <div className="notif-bell__empty">
+                            <span>🎉</span>
+                            <p>Sin notificaciones</p>
                         </div>
-                    ))
-                )}
+                    ) : (
+                        notifications.map((n) => (
+                            <div key={n.id} className="notif-bell__item-row">
+                                <button
+                                    className="notif-bell__item"
+                                    onClick={() => handleClick(n)}
+                                >
+                                    <span className="notif-bell__item-icon" style={{ color: n.color, background: `${n.color}15` }}>
+                                        {n.icon}
+                                    </span>
+                                    <div className="notif-bell__item-body">
+                                        <span className="notif-bell__item-text">{n.text}</span>
+                                        <span className="notif-bell__item-sub">{n.sub}</span>
+                                    </div>
+                                </button>
+                                <button
+                                    className="notif-bell__dismiss-btn"
+                                    onClick={(e) => dismissOne(e, n.id)}
+                                    title="Descartar"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>,
+        </>,
         document.body
     ) : null;
 
