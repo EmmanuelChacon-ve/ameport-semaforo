@@ -73,7 +73,14 @@ function buildInitialTasks(departments, activities) {
 
     departments.forEach((dept) => {
         const deptActivities = activitiesByDept[dept.name] || [];
-        const activeTasks = deptActivities.filter(isActiveThisMonth);
+        const activeTasks = deptActivities.filter((t) => {
+            if (isActiveThisMonth(t)) return true;
+            // Include overdue tasks not yet Realizado
+            const end = Array.isArray(t.months) && t.months.length > 0
+                ? Math.max(...t.months) : t.endMonth;
+            if (end != null && end < CURRENT_MONTH && t.manualStatus !== 'Realizado') return true;
+            return false;
+        });
 
         activeTasks.forEach((t) => {
             const semaforo = calculateSemaforo(t, CURRENT_MONTH);

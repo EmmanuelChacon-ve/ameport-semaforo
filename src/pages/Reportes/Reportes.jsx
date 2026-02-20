@@ -22,8 +22,8 @@ export default function Reportes() {
             dept.tasks.forEach((t) => {
                 const eff = getDeptStatus(t.id, t.semaforo);
                 if (eff === 'green') completed++;
-                else if (eff === 'blue' || eff === 'yellow') inProgress++;
-                else if (eff === 'red' || eff === 'gray') delayed++;
+                else if (eff === 'yellow') inProgress++;
+                else if (eff === 'red') delayed++;
             });
 
             const pct = total > 0 ? Math.round((completed / total) * 100) : 0;

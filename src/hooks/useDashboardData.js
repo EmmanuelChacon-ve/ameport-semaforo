@@ -47,11 +47,31 @@ export default function useDashboardData() {
           const deptActivities = activitiesByDept[dept.name] || [];
 
           const activeTasks = deptActivities
-            .filter(isActiveThisMonth)
+            .filter((t) => {
+              // Include tasks active this month
+              if (isActiveThisMonth(t)) return true;
+              // Also include overdue tasks (past endMonth, not realized)
+              // so "Atrasadas" count is accurate on Dashboard & Reportes
+              const end = Array.isArray(t.months) && t.months.length > 0
+                ? Math.max(...t.months)
+                : t.endMonth;
+              if (end != null && end < CURRENT_MONTH && t.manualStatus !== 'Realizado') {
+                return true;
+              }
+              return false;
+            })
             .map((task) => {
               const semaforo = calculateSemaforo(task, CURRENT_MONTH);
+              // Derive startMonth/endMonth from months[] for Mantenimiento/Consumo
+              let { startMonth, endMonth } = task;
+              if ((startMonth == null || endMonth == null) && Array.isArray(task.months) && task.months.length > 0) {
+                startMonth = Math.min(...task.months);
+                endMonth = Math.max(...task.months);
+              }
               return {
                 ...task,
+                startMonth,
+                endMonth,
                 semaforo,
                 status: semaforoToStatus(semaforo),
                 category: task.category || '',
