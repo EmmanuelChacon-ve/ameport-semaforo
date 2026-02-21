@@ -1,11 +1,11 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { monthNames } from '../../utils/semaforoUtils';
 import { useTasks } from '../../context/TaskContext';
 import useObservationRead from '../../hooks/useObservationRead';
 import ObservationIndicator from '../ObservationIndicator/ObservationIndicator';
 import ObservationPrompt from '../ObservationPrompt/ObservationPrompt';
-import { FiTrash2, FiEye, FiSearch } from 'react-icons/fi';
+import { FiTrash2, FiEye, FiSearch, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
 import './AdminDeptTable.css';
 
 const CURRENT_MONTH = new Date().getMonth();
@@ -19,7 +19,7 @@ const CURRENT_MONTH = new Date().getMonth();
  *   categoryColors  — { [catName]: '#hex' }
  *   onDeleteClick   — (task) => void
  */
-export default function AdminDeptTable({ tasks, departmentName, categoryColors = {}, onDeleteClick }) {
+export default function AdminDeptTable({ tasks, departmentName, categoryColors = {}, onDeleteClick, onRenameCategory }) {
     const {
         getDeptStatus, getDeptDetailedStatus, cycleDeptStatus,
         DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS,
@@ -29,6 +29,8 @@ export default function AdminDeptTable({ tasks, departmentName, categoryColors =
     const navigate = useNavigate();
 
     const [search, setSearch] = useState('');
+    const [editingCat, setEditingCat] = useState(null);
+    const [editingName, setEditingName] = useState('');
 
     /* ── Filter by search ── */
     const filtered = useMemo(() => {
@@ -108,7 +110,37 @@ export default function AdminDeptTable({ tasks, departmentName, categoryColors =
                                     <tr className="adm-table__cat-header">
                                         <td colSpan={9} className="adm-table__cat-header-cell" style={{ '--cat-color': catColor }}>
                                             <span className="adm-table__cat-header-dot" />
-                                            <span className="adm-table__cat-header-name">{cat}</span>
+                                            {editingCat === cat ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                    <input
+                                                        className="fgantt__cat-rename-input"
+                                                        value={editingName}
+                                                        onChange={(e) => setEditingName(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && editingName.trim() && editingName.trim() !== cat) {
+                                                                onRenameCategory?.(cat, editingName.trim());
+                                                                setEditingCat(null);
+                                                            }
+                                                            if (e.key === 'Escape') setEditingCat(null);
+                                                        }}
+                                                        autoFocus
+                                                    />
+                                                    <button className="fgantt__cat-rename-btn" onClick={() => {
+                                                        if (editingName.trim() && editingName.trim() !== cat) {
+                                                            onRenameCategory?.(cat, editingName.trim());
+                                                        }
+                                                        setEditingCat(null);
+                                                    }} title="Guardar"><FiCheck size={14} /></button>
+                                                    <button className="fgantt__cat-rename-btn" onClick={() => setEditingCat(null)} title="Cancelar"><FiX size={14} /></button>
+                                                </span>
+                                            ) : (
+                                                <span className="adm-table__cat-header-name">{cat}</span>
+                                            )}
+                                            {!editingCat && onRenameCategory && (
+                                                <button className="fgantt__cat-edit-btn" onClick={() => { setEditingCat(cat); setEditingName(cat); }} title="Editar nombre">
+                                                    <FiEdit2 size={12} />
+                                                </button>
+                                            )}
                                             <span className="adm-table__cat-header-count">{catTasks.length} actividades</span>
                                         </td>
                                     </tr>

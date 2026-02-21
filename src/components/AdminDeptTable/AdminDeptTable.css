@@ -132,6 +132,10 @@
     border-left: 3px solid var(--cat-color);
 }
 
+.adm-table__cat-header-cell:hover .fgantt__cat-edit-btn {
+    opacity: 1;
+}
+
 .adm-table__cat-header-dot {
     display: inline-block;
     width: 9px;

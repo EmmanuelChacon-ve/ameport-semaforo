@@ -18,12 +18,12 @@ import ObservationIndicator from '../ObservationIndicator/ObservationIndicator';
 import StatusRequestButton from '../StatusRequestButton/StatusRequestButton';
 import ObservationPrompt from '../ObservationPrompt/ObservationPrompt';
 import AdminDeptTable from '../AdminDeptTable/AdminDeptTable';
-import './FinGantt.css';
+import '../FinGantt/FinGantt.css';
 
 const CURRENT_MONTH = new Date().getMonth();
-const DEPT_NAME = 'Finanzas';
+const DEPT_NAME = 'Coordinación General';
 
-export default function FinGantt() {
+export default function CoordGenGantt() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [semaforoFilter, setSemaforoFilter] = useState(null);
@@ -38,7 +38,7 @@ export default function FinGantt() {
     const { getDeptStatus, getDeptDetailedStatus, cycleDeptStatus, isCoordinator, DEPT_SEMAFORO_COLORS, DEPT_SEMAFORO_LABELS, pendingObservation, confirmObservation, cancelObservation } = useTasks();
     const { hasUnread } = useObservationRead();
     const tableRef = useRef(null);
-    const { tasks: tasksWithStatus, categories: finCategories, categoryColors, departments, loading, refetch } = useGanttData(DEPT_NAME);
+    const { tasks: tasksWithStatus, categories: cgCategories, categoryColors, departments, loading, refetch } = useGanttData(DEPT_NAME);
     const {
         isAdmin, canCreate,
         showCreateModal, setShowCreateModal,
@@ -54,10 +54,10 @@ export default function FinGantt() {
 
     const categoryCounts = useMemo(() => {
         const c = {};
-        finCategories.forEach((cat) => (c[cat] = 0));
+        cgCategories.forEach((cat) => (c[cat] = 0));
         tasksWithStatus.forEach((t) => c[t.category]++);
         return c;
-    }, [tasksWithStatus, finCategories]);
+    }, [tasksWithStatus, cgCategories]);
 
     const unreadCount = useMemo(() => {
         return tasksWithStatus.filter((t) => (t.observations?.length || 0) > 0 && hasUnread(t.id, t.observations.length)).length;
@@ -73,10 +73,10 @@ export default function FinGantt() {
 
     const grouped = useMemo(() => {
         const g = {};
-        finCategories.forEach((c) => (g[c] = []));
+        cgCategories.forEach((c) => (g[c] = []));
         filtered.forEach((t) => { if (g[t.category]) g[t.category].push(t); });
         return g;
-    }, [filtered, finCategories]);
+    }, [filtered, cgCategories]);
 
     const hasFilters = semaforoFilter || categoryFilter || unreadFilter;
 
@@ -133,7 +133,7 @@ export default function FinGantt() {
                 <div className="fgantt__filters-row">
                     <div className="fgantt__filters-left"><span className="fgantt__filter-label">Área:</span></div>
                     <div className="fgantt__filter-buttons">
-                        {finCategories.map((cat) => (
+                        {cgCategories.map((cat) => (
                             <button key={cat} className={`fgantt__cat-btn ${categoryFilter === cat ? 'fgantt__cat-btn--active' : ''}`}
                                 style={{ '--c-color': categoryColors[cat], '--c-bg': `${categoryColors[cat]}25` }}
                                 onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)} title={cat}>
@@ -150,7 +150,7 @@ export default function FinGantt() {
                 <span className="gantt__toolbar-total">{filtered.length} de {tasksWithStatus.length} actividades</span>
                 <div className="gantt__toolbar-actions">
                     {isAdmin && (
-                        <button className="grid-print-btn" onClick={() => printTable(tableRef.current, 'Finanzas')}>
+                        <button className="grid-print-btn" onClick={() => printTable(tableRef.current, 'Coordinación General')}>
                             <FiPrinter size={14} /> Imprimir
                         </button>
                     )}
@@ -189,7 +189,7 @@ export default function FinGantt() {
                                     <th className="fgantt__th fgantt__th--actions"></th>
                                 </tr></thead>
                                 <tbody>
-                                    {finCategories.map((cat) => {
+                                    {cgCategories.map((cat) => {
                                         const catTasks = grouped[cat];
                                         if (!catTasks || catTasks.length === 0) return null;
                                         const cc = categoryColors[cat];

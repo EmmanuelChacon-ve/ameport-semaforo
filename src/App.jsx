@@ -17,6 +17,7 @@ import Gestion from './pages/Gestion/Gestion';
 import Finanzas from './pages/Finanzas/Finanzas';
 import Crecimiento from './pages/Crecimiento/Crecimiento';
 import Consumo from './pages/Consumo/Consumo';
+import CoordGeneral from './pages/CoordGeneral/CoordGeneral';
 import Reportes from './pages/Reportes/Reportes';
 import ActivityDetail from './pages/ActivityDetail/ActivityDetail';
 import NotFound from './pages/NotFound/NotFound';
@@ -30,6 +31,7 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
           <Route path="/reportes" element={<AdminRoute><Reportes /></AdminRoute>} />
+          <Route path="/coordinacion-general" element={<DeptRoute deptKey="Coordinación General"><CoordGeneral /></DeptRoute>} />
           <Route path="/sistemas" element={<DeptRoute deptKey="Sistemas"><Sistemas /></DeptRoute>} />
           <Route path="/turismo" element={<DeptRoute deptKey="Turismo"><Turismo /></DeptRoute>} />
           <Route path="/salud" element={<DeptRoute deptKey="Salud y Recreación"><Salud /></DeptRoute>} />

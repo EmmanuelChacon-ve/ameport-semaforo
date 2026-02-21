@@ -176,6 +176,32 @@ export async function addDepartmentCategory(departmentId, categoryName, token) {
   return data;
 }
 
+/**
+ * Rename a category within a department (admin only).
+ * @param {string} departmentId — Firestore document ID
+ * @param {string} oldName — current category name
+ * @param {string} newName — new category name
+ * @param {string} token — Firebase auth token
+ */
+export async function renameDepartmentCategory(departmentId, oldName, newName, token) {
+  const res = await fetch(`${API_URL}/departments/${departmentId}/categories`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ oldName, newName }),
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(data.message || 'Error al renombrar categoría');
+  }
+
+  return data;
+}
+
 // ═══════════════════════════════════════════════════════════
 // STATUS REQUESTS (Coordinator → Admin approval flow)
 // ═══════════════════════════════════════════════════════════

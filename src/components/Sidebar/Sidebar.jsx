@@ -11,6 +11,7 @@ import {
     FiDollarSign,
     FiTrendingUp,
     FiShoppingCart,
+    FiBriefcase,
     FiChevronLeft,
     FiChevronRight,
     FiChevronDown,
@@ -31,6 +32,7 @@ const topItems = [
 ];
 
 const deptItems = [
+    { to: '/coordinacion-general', icon: <FiBriefcase />, label: 'Coord. General', deptKey: 'Coordinación General' },
     { to: '/sistemas', icon: <FiMonitor />, label: 'Sistemas', deptKey: 'Sistemas' },
     { to: '/turismo', icon: <FiMapPin />, label: 'Turismo', deptKey: 'Turismo' },
     { to: '/salud', icon: <FiHeart />, label: 'Salud', deptKey: 'Salud y Recreación' },
