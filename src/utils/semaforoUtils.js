@@ -106,14 +106,14 @@ export function calculateSemaforo(task, currentMonth = CURRENT_MONTH) {
   // ── Format 2: startMonth/endMonth + status (Turismo, Comunicación, etc.) ──
   if (task.status && task.startMonth !== undefined && task.endMonth !== undefined) {
     if (task.status === 'En curso' || task.status === 'En Curso') {
-      if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'green';
-      if (currentMonth > task.endMonth) return 'red';
-      return 'yellow';
+      if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'yellow'; // In range → En Curso
+      if (currentMonth > task.endMonth) return 'red';   // Past → Atrasado
+      return 'green';  // Future → Pendiente
     }
     if (task.status === 'Pendiente') {
-      if (currentMonth < task.startMonth) return 'green';
-      if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'yellow';
-      return 'red';
+      if (currentMonth < task.startMonth) return 'green';  // Future → Pendiente
+      if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'yellow'; // In range → En Curso
+      return 'red'; // Past → Atrasado
     }
     // Ocasional or other statuses
     return 'green';
@@ -121,11 +121,10 @@ export function calculateSemaforo(task, currentMonth = CURRENT_MONTH) {
 
   // ── Format 3: only startMonth/endMonth (Sistemas, Finanzas) ──
   if (task.startMonth !== undefined && task.endMonth !== undefined) {
-    if (currentMonth < task.startMonth) return 'green';
-    if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'green';
+    if (currentMonth < task.startMonth) return 'green';       // Hasn't started → Pendiente/A Tiempo
+    if (currentMonth >= task.startMonth && currentMonth <= task.endMonth) return 'yellow'; // In range → En Curso
     // Past endMonth → overdue
-    if (currentMonth > task.endMonth) return 'red';
-    return 'green';
+    return 'red';
   }
 
   return 'green';
@@ -136,7 +135,7 @@ export function calculateSemaforo(task, currentMonth = CURRENT_MONTH) {
  */
 export function semaforoToStatus(sem) {
   switch (sem) {
-    case 'green': return STATUS.REALIZADO;
+    case 'green': return STATUS.PENDIENTE;
     case 'yellow': return STATUS.EN_CURSO;
     case 'red': return STATUS.ATRASADO;
     default: return STATUS.PENDIENTE;

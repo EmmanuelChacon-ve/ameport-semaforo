@@ -83,7 +83,14 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
         const value = field === 'startMonth' || field === 'endMonth'
             ? parseInt(e.target.value, 10)
             : e.target.value;
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        setFormData((prev) => {
+            const next = { ...prev, [field]: value };
+            // If startMonth changed and is now after endMonth, auto-adjust endMonth
+            if (field === 'startMonth' && value > prev.endMonth) {
+                next.endMonth = value;
+            }
+            return next;
+        });
     };
 
     const handleCategoryChange = (e) => {
@@ -137,6 +144,10 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
         }
         if (!formData.category.trim()) {
             setError('La categoría es obligatoria');
+            return;
+        }
+        if (formData.endMonth < formData.startMonth) {
+            setError('El mes de fin no puede ser anterior al mes de inicio');
             return;
         }
 
@@ -307,7 +318,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
                                 onChange={handleChange('endMonth')}
                             >
                                 {MONTHS.map((m, i) => (
-                                    <option key={i} value={i}>{m}</option>
+                                    <option key={i} value={i} disabled={i < formData.startMonth}>{m}</option>
                                 ))}
                             </select>
                         </div>

@@ -21,15 +21,15 @@ const DEPT_STATUS_ORDER = [
 const STATUS_TO_SEMAFORO = {
     [STATUS.REALIZADO]: 'green',
     [STATUS.EN_CURSO]: 'yellow',
-    [STATUS.PENDIENTE]: 'yellow',
+    [STATUS.PENDIENTE]: 'green',
     [STATUS.ATRASADO]: 'red',
     [STATUS.NO_REALIZADO]: 'red',
 };
 
 const DEPT_SEMAFORO_COLORS = {
-    green: '#10B981',
-    yellow: '#F59E0B',
-    red: '#EF4444',
+    green: '#F59E0B',  // Pendiente — amber (hasn't started, on schedule)
+    yellow: '#3B82F6', // En Curso — blue (currently in range)
+    red: '#EF4444',    // Atrasado — red (overdue)
     // Detailed status colors (used for grid pills)
     [STATUS.REALIZADO]: '#10B981',
     [STATUS.EN_CURSO]: '#3B82F6',
@@ -39,8 +39,8 @@ const DEPT_SEMAFORO_COLORS = {
 };
 
 const DEPT_SEMAFORO_LABELS = {
-    green: 'Realizado',
-    yellow: 'A tiempo',
+    green: 'Pendiente',
+    yellow: 'En Curso',
     red: 'Atrasado',
     // Detailed status labels (used for grid pills)
     [STATUS.REALIZADO]: 'Realizado',
@@ -268,8 +268,11 @@ export function TaskProvider({ children }) {
             return override;
         }
         // No override — derive from auto semaforo
+        // green = on schedule (future start or completed range but no manual confirm)
+        // yellow = currently in range (En Curso)
+        // red = past end date (Atrasado)
         switch (autoSemaforo) {
-            case 'green': return STATUS.REALIZADO;
+            case 'green': return STATUS.PENDIENTE;
             case 'yellow': return STATUS.EN_CURSO;
             case 'red': return STATUS.ATRASADO;
             default: return STATUS.PENDIENTE;
@@ -291,7 +294,7 @@ export function TaskProvider({ children }) {
         if (currentOverride) {
             currentStatus = currentOverride;
         } else {
-            const semToStatus = { green: STATUS.REALIZADO, blue: STATUS.EN_CURSO, yellow: STATUS.PENDIENTE, red: STATUS.ATRASADO, gray: STATUS.NO_REALIZADO };
+            const semToStatus = { green: STATUS.PENDIENTE, yellow: STATUS.EN_CURSO, red: STATUS.ATRASADO, gray: STATUS.NO_REALIZADO };
             currentStatus = semToStatus[currentAutoSemaforo] || STATUS.PENDIENTE;
         }
         setPendingObservation({ type: 'dept', taskId, taskName: taskName || '', currentStatus });
