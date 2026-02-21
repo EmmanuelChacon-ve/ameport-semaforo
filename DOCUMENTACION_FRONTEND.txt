@@ -1,0 +1,889 @@
+================================================================================
+  DOCUMENTACIÓN COMPLETA — FRONTEND (Semaforo)
+  Proyecto: Semáforo — Sistema de seguimiento de actividades
+  Última actualización: 21 de Febrero 2026
+================================================================================
+
+TABLA DE CONTENIDOS:
+  1. Arquitectura General
+  2. Variables de Entorno
+  3. Punto de Entrada
+  4. Contextos (context/)
+  5. Utilidades (utils/)
+  6. Servicios (services/)
+  7. Hooks Personalizados (hooks/)
+  8. Componentes (components/)
+  9. Páginas (pages/)
+  10. Datos Locales Legados (data/)
+  11. Flujo del Semáforo — Explicación Completa
+  12. Guía de Debugging
+
+================================================================================
+1. ARQUITECTURA GENERAL
+================================================================================
+
+Framework:        React + Vite
+Routing:          React Router DOM (BrowserRouter)
+Autenticación:    Firebase (token JWT via backend)
+Estado global:    React Context (AuthContext + TaskContext)
+Estilos:          CSS vanilla (un .css por componente)
+API URL:          Configurada en .env como VITE_API_URL
+
+Estructura de carpetas:
+  Semaforo/src/
+  ├── main.jsx                     ← Punto de entrada React
+  ├── App.jsx                      ← Routing y providers globales
+  ├── App.css                      ← Estilos globales
+  ├── context/
+  │   ├── AuthContext.jsx          ← Autenticación (login, logout, token)
+  │   └── TaskContext.jsx          ← Estado global de tareas + overrides
+  ├── utils/
+  │   └── semaforoUtils.js         ← Lógica del semáforo + constantes de estado
+  ├── services/
+  │   └── api.js                   ← Todas las llamadas HTTP al backend
+  ├── hooks/
+  │   ├── useDashboardData.js      ← Datos del Dashboard
+  │   ├── useGanttData.js          ← Datos de Gantt por departamento
+  │   ├── useGanttCRUD.js          ← Operaciones CRUD de tareas
+  │   └── useObservationRead.js    ← Estado de lectura de observaciones
+  ├── components/                  ← Componentes reutilizables
+  │   ├── ActivityDetailModal/     ← Modal de detalle de actividad
+  │   ├── AdminDeptTable/          ← Tabla admin de departamento
+  │   ├── AdminExecutiveGrid/      ← Grilla ejecutiva del admin
+  │   ├── AdminRoute/              ← Protección de rutas admin
+  │   ├── AnimatedCounter/         ← Contador animado
+  │   ├── ComGantt/                ← Gantt de Comunicación
+  │   ├── ConsumoGantt/            ← Gantt de Consumo
+  │   ├── CoordGenGantt/           ← Gantt de Coord. General
+  │   ├── CreateCategoryModal/     ← Modal crear categoría
+  │   ├── CreateTaskModal/         ← Modal crear tarea
+  │   ├── CrecGantt/               ← Gantt de Crecimiento
+  │   ├── DeleteConfirmDialog/     ← Diálogo confirmar eliminación
+  │   ├── DeptRoute/               ← Protección de ruta por departamento
+  │   ├── DeptSection/             ← Sección de departamento en Dashboard
+  │   ├── FilterBar/               ← Barra de filtros
+  │   ├── FinGantt/                ← Gantt de Finanzas
+  │   ├── GanttChart/              ← Gantt genérico (Sistemas, etc.)
+  │   ├── GestionGantt/            ← Gantt de Gestión de Asociados
+  │   ├── Header/                  ← Header de la página
+  │   ├── LoadingSpinner/          ← Spinner de carga
+  │   ├── MantGantt/               ← Gantt de Mantenimiento
+  │   ├── NotificationBell/        ← Campana de notificaciones
+  │   ├── ObservationIndicator/    ← Indicador de observaciones no leídas
+  │   ├── ObservationPrompt/       ← Prompt de observación al cambiar estado
+  │   ├── ProtectedRoute/          ← Ruta protegida (requiere login)
+  │   ├── SaludGantt/              ← Gantt de Salud y Recreación
+  │   ├── Sidebar/                 ← Barra lateral de navegación
+  │   ├── StatusBadge/             ← Badge de estado
+  │   ├── StatusCard/              ← Tarjeta de estado (Dashboard)
+  │   ├── StatusRequestButton/     ← Botón solicitar cambio de estado
+  │   ├── StatusRequestsPanel/     ← Panel de solicitudes de estado
+  │   ├── TaskTable/               ← Tabla de tareas
+  │   └── TurismoGantt/            ← Gantt de Turismo
+  ├── pages/                       ← Páginas (una por ruta)
+  │   ├── ActivityDetail/          ← Detalle de una actividad
+  │   ├── Comunicacion/            ← Departamento Comunicación
+  │   ├── Consumo/                 ← Departamento Consumo
+  │   ├── CoordGeneral/            ← Coordinación General
+  │   ├── Crecimiento/             ← Departamento Crecimiento
+  │   ├── Dashboard/               ← Panel principal (admin)
+  │   ├── Finanzas/                ← Departamento Finanzas
+  │   ├── Gestion/                 ← Departamento Gestión
+  │   ├── Login/                   ← Pantalla de login
+  │   ├── Mantenimiento/           ← Departamento Mantenimiento
+  │   ├── NotFound/                ← Página 404
+  │   ├── Reportes/                ← Reportes ejecutivos (admin)
+  │   ├── Salud/                   ← Departamento Salud
+  │   ├── Sistemas/                ← Departamento Sistemas
+  │   └── Turismo/                 ← Departamento Turismo
+  └── data/                        ← Datos locales legados (comentados)
+
+================================================================================
+2. VARIABLES DE ENTORNO
+================================================================================
+
+  .env (Semaforo/):
+    VITE_API_URL=http://localhost:5000/api   ← URL base del backend
+
+================================================================================
+3. PUNTO DE ENTRADA
+================================================================================
+
+── main.jsx ──
+  QUÉ HACE: Renderiza <App /> en el DOM con React 18 createRoot.
+
+── App.jsx ──
+  QUÉ HACE:
+    - Define la estructura de routing completa de la app.
+    - Envuelve todo con providers: AuthProvider → TaskProvider → ObsReadProvider.
+    - Estructura de layout: Sidebar + contenido principal.
+  
+  PROVIDERS (de afuera hacia adentro):
+    1. BrowserRouter     ← React Router
+    2. AuthProvider      ← Autenticación (user, token, login, logout)
+    3. TaskProvider      ← Estado de tareas y overrides
+    4. ObsReadProvider   ← Conteos de lectura de observaciones
+  
+  RUTAS:
+    /login                → Login (pública)
+    /                     → Dashboard (solo admin)
+    /reportes             → Reportes (solo admin)
+    /coordinacion-general → CoordGeneral (admin o coordinador del dept)
+    /sistemas             → Sistemas (DeptRoute "Sistemas")
+    /turismo              → Turismo (DeptRoute "Turismo")
+    /salud                → Salud (DeptRoute "Salud y Recreación")
+    /comunicacion         → Comunicación (DeptRoute "Comunicación y Marketing")
+    /mantenimiento        → Mantenimiento (DeptRoute "Mantenimiento")
+    /gestion              → Gestión (DeptRoute "Gestión de Asociados")
+    /finanzas             → Finanzas (DeptRoute "Finanzas")
+    /crecimiento          → Crecimiento (DeptRoute "Crecimiento")
+    /consumo              → Consumo (DeptRoute "Consumo")
+    /actividad/:id        → ActivityDetail (detalle de actividad)
+    *                     → NotFound (404)
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Ruta no encontrada → verificar que está registrada.
+    - Provider no funciona → verificar el orden de los providers.
+    - Sidebar no aparece → verificar AppLayout.
+
+================================================================================
+4. CONTEXTOS (context/)
+================================================================================
+
+── context/AuthContext.jsx ──
+  QUÉ HACE:
+    - Maneja autenticación del usuario.
+    - Guarda token JWT en localStorage.
+    - Al montar, verifica si el token guardado sigue válido (GET /api/auth/me).
+    - Provee: user, token, loading, login(), logout().
+  
+  FUNCIONES:
+    login(email, password)
+      - Llama POST /api/auth/login.
+      - Guarda token en localStorage + state.
+      - Setea user con los datos recibidos.
+    
+    logout()
+      - Limpia token de localStorage + state.
+      - Setea user a null.
+    
+    verifyToken(savedToken)
+      - Llama GET /api/auth/me con el token guardado.
+      - Si es válido: setea user.
+      - Si es inválido: limpia localStorage y state.
+  
+  HOOK: useAuth()
+    - Retorna { user, token, loading, login, logout }.
+    - user contiene: uid, email, role, displayName, departments[].
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Login no funciona → verificar la llamada a /api/auth/login.
+    - Sesión no persiste → verificar verifyToken y localStorage.
+    - user es null después del login → verificar que la respuesta del API tiene user.
+
+── context/TaskContext.jsx ── (⭐ ARCHIVO MÁS CRÍTICO DEL FRONTEND)
+  QUÉ HACE:
+    - Estado global de TODAS las tareas.
+    - Maneja overrides manuales de estado (deptOverrides).
+    - Provee funciones para cambiar estados, crear y eliminar tareas.
+    - Mapea semáforo ↔ estados ↔ colores.
+  
+  CONSTANTES IMPORTANTES:
+    STATUS_TO_SEMAFORO:
+      Realizado → green, En Curso → yellow, Pendiente → green,
+      Atrasado → red, No Realizado → red
+    
+    DEPT_SEMAFORO_COLORS:
+      green → #F59E0B (ámbar, Pendiente)
+      yellow → #3B82F6 (azul, En Curso)
+      red → #EF4444 (rojo, Atrasado)
+      + colores para cada STATUS (para pills en la grilla)
+    
+    DEPT_SEMAFORO_LABELS:
+      green → 'Pendiente'
+      yellow → 'En Curso'
+      red → 'Atrasado'
+      + labels para cada STATUS explícito
+  
+  FUNCIONES DEL PROVIDER:
+    buildInitialTasks(departments, activities)
+      - Construye la lista de tareas para el Dashboard desde la API.
+      - Extrae los overrides manuales (manualStatus) de cada actividad.
+    
+    refreshTasks()
+      - Recarga TODAS las tareas desde la API.
+      - Reconstruye el mapa de deptOverrides desde manualStatus.
+      - Se llama al montar el componente.
+    
+    persistStatus(originalId, manualStatus, observation)
+      - Guarda el estado manual en Firestore (fire-and-forget).
+      - Solo admin.
+    
+    updateTaskStatus(taskId, newStatus)
+      - Cambia el estado de una tarea del Dashboard.
+      - Si es Atrasado o No Realizado → requiere observación (abre prompt).
+    
+    cycleStatus(taskId)
+      - Abre el modal de cambio de estado para una tarea del Dashboard.
+    
+    getDeptStatus(taskId, autoSemaforo)
+      - Retorna el semáforo efectivo: si hay override manual, lo usa;
+        si no, usa el auto-calculado.
+      - REGLA AUTO-ATRASADO: si el auto-calc dice 'red' y el manual NO es 
+        'Realizado', fuerza 'red' (no se puede escapar de Atrasado).
+    
+    getDeptDetailedStatus(taskId, autoSemaforo)
+      - Retorna el STATUS detallado (ej: "Realizado", "En Curso").
+      - Si hay override: lo retorna directamente.
+      - Si no: mapea green→Pendiente, yellow→En Curso, red→Atrasado.
+    
+    cycleDeptStatus(taskId, currentAutoSemaforo, taskName)
+      - Abre el modal de cambio de estado para tareas de departamento.
+      - Calcula el estado actual del override o del auto-calc.
+    
+    setDeptTaskStatus(taskId, newStatus)
+      - Cambia manualmente el estado de una tarea de departamento.
+      - Persiste en Firestore.
+    
+    clearDeptOverride(taskId)
+      - Limpia el override manual (vuelve al auto-calc).
+    
+    createTask(activityData)
+      - Crea nueva tarea via API.
+      - Llama refreshTasks() después para actualizar la lista.
+    
+    deleteTask(taskId)
+      - Elimina tarea via API.
+      - Llama refreshTasks() después.
+  
+  HOOK: useTasks()
+    - Retorna TODO: tasks, filteredTasks, activeFilter, searchQuery,
+      sortConfig, isAdmin, isCoordinator, canCreate (+todas las funciones).
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Estado incorrecto mostrado → verificar getDeptStatus y getDeptDetailedStatus.
+    - Colores incorrectos → verificar DEPT_SEMAFORO_COLORS y STATUS_TO_SEMAFORO.
+    - Labels incorrectas → verificar DEPT_SEMAFORO_LABELS.
+    - Modal muestra estado equivocado → verificar cycleDeptStatus (línea ~297).
+    - Tarea creada con estado incorrecto → verificar que no se guarda manualStatus
+      al crear (el auto-calc lo determina).
+    - Override no funciona → verificar deptOverrides y persistStatus.
+
+================================================================================
+5. UTILIDADES (utils/)
+================================================================================
+
+── utils/semaforoUtils.js ── (⭐ LÓGICA CENTRAL DEL SEMÁFORO)
+  QUÉ HACE:
+    - Contiene TODA la lógica de cálculo del semáforo.
+    - Define constantes de estado (STATUS, STATUS_CONFIG).
+    - Funciones helper para meses y formato.
+  
+  CONSTANTES:
+    STATUS = { REALIZADO, EN_CURSO, PENDIENTE, ATRASADO, NO_REALIZADO }
+    
+    STATUS_CONFIG = Mapa de status → { color, bgLight, icon, label }
+      Realizado    → #10B981 verde  ✓
+      En Curso     → #3B82F6 azul   ▶
+      Pendiente    → #F59E0B ámbar  ◉
+      Atrasado     → #EF4444 rojo   !
+      No Realizado → #6B7280 gris   ✗
+    
+    CURRENT_MONTH = new Date().getMonth()   ← DINÁMICO, se calcula al cargar
+    currentMonthLabel = "Febrero" (etc.)
+    
+    monthNames = ['Ene', 'Feb', ... 'Dic']
+    
+    statusLabels = { green: 'Realizadas', yellow: 'A tiempo', red: 'Atrasadas' }
+    
+    semaforoColors = { green: '#10B981', yellow: '#F59E0B', red: '#EF4444' }
+    
+    frequencyColors = { Mensual, Bimensual, Trimestral, Semestral, Anual, Único }
+  
+  FUNCIONES:
+    isActiveThisMonth(task)
+      - Determina si una tarea está activa este mes.
+      - Funciona con months[] y startMonth/endMonth.
+    
+    calculateSemaforo(task, currentMonth)  ← ⭐ FUNCIÓN MÁS IMPORTANTE
+      - Calcula el color del semáforo basado en fechas.
+      - Usa new Date().getMonth() por defecto (se actualiza cada mes automáticamente).
+      - Detecta 3 formatos de tarea:
+      
+      FORMAT 1 — months[] (Consumo, Mantenimiento):
+        - Tiene el mes actual → 'yellow' (En Curso)
+        - Es "Único" y ya pasó → 'green' o 'red' según antigüedad
+        - Otros casos → 'green'
+      
+      FORMAT 2 — startMonth/endMonth + status (Turismo, Com, Salud, Crec, Gestión):
+        - Status "En curso/En Curso":
+            dentro del rango → 'yellow' (En Curso)
+            pasó el fin      → 'red' (Atrasado)
+            futuro           → 'green' (Pendiente)
+        - Status "Pendiente":
+            antes del inicio → 'green' (Pendiente)
+            dentro del rango → 'yellow' (En Curso)
+            pasó el fin      → 'red' (Atrasado)
+      
+      FORMAT 3 — solo startMonth/endMonth (Sistemas, Finanzas):
+        antes del inicio → 'green' (Pendiente)
+        dentro del rango → 'yellow' (En Curso)
+        pasó el fin      → 'red' (Atrasado)
+    
+    semaforoToStatus(sem)
+      - Mapea semáforo a STATUS:
+        green → PENDIENTE
+        yellow → EN_CURSO
+        red → ATRASADO
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Tarea muestra color equivocado → verificar calculateSemaforo.
+    - Tarea debería ser "En Curso" pero aparece como otra cosa →
+      verificar en qué formato cae (1, 2 o 3) según los campos de la tarea.
+    - Meses no se actualizan → verificar CURRENT_MONTH (usa new Date()).
+
+================================================================================
+6. SERVICIOS (services/)
+================================================================================
+
+── services/api.js ──
+  QUÉ HACE:
+    - Centraliza TODAS las llamadas HTTP al backend.
+    - Usa VITE_API_URL como base URL.
+    - Cada función construye la request con headers de autenticación.
+  
+  FUNCIONES:
+    authHeaders()
+      - Construye headers con Authorization: Bearer <token>.
+      - Lee el token de localStorage.
+    
+    — ACTIVIDADES —
+    fetchActivities(department?, category?)
+      - GET /activities?department=X&category=Y
+    
+    fetchAllActivities()
+      - GET /activities (sin filtros)
+    
+    createNewActivity(activityData, token)
+      - POST /activities
+    
+    deleteActivityById(activityId, token)
+      - DELETE /activities/:id
+    
+    updateActivityStatus(activityId, manualStatus, token, observation?)
+      - PATCH /activities/:id/status
+    
+    — DEPARTAMENTOS —
+    fetchDepartments()
+      - GET /departments
+    
+    fetchDepartmentsMetadata()
+      - GET /departments (idéntico a fetchDepartments, usa authHeaders)
+    
+    addDepartmentCategory(departmentId, categoryName, token)
+      - POST /departments/:id/categories
+    
+    renameDepartmentCategory(departmentId, oldName, newName, token)
+      - PATCH /departments/:id/categories
+    
+    — STATUS REQUESTS —
+    createStatusRequest(activityId, requestedStatus, reason)
+      - POST /status-requests
+    
+    fetchStatusRequests(status?)
+      - GET /status-requests?status=X
+    
+    resolveStatusRequest(requestId, action, adminNote?)
+      - PATCH /status-requests/:id
+    
+    — OBSERVACIONES —
+    addObservation(activityId, text, type?)
+      - POST /activities/:id/observations
+    
+    fetchObservations(activityId)
+      - GET /activities/:id/observations
+    
+    — LECTURA DE OBSERVACIONES —
+    fetchObsReadCounts()
+      - GET /activities/obs-read-counts
+    
+    markObsReadApi(activityId, count)
+      - PUT /activities/obs-read-counts
+    
+    — DETALLE DE ACTIVIDAD —
+    fetchActivityDetail(activityId)
+      - GET /activities/:id
+    
+    — HITOS (MILESTONES) —
+    fetchMilestones(activityId)
+      - GET /activities/:id/milestones
+    
+    createMilestone(activityId, milestoneData)
+      - POST /activities/:id/milestones
+    
+    updateMilestone(activityId, milestoneId, data)
+      - PUT /activities/:id/milestones/:milestoneId
+    
+    toggleMilestoneComplete(activityId, milestoneId)
+      - PATCH /activities/:id/milestones/:milestoneId
+    
+    deleteMilestone(activityId, milestoneId)
+      - DELETE /activities/:id/milestones/:milestoneId
+    
+    addMilestoneComment(activityId, milestoneId, text)
+      - POST /activities/:id/milestones/:milestoneId/comments
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Error de red → verificar VITE_API_URL en .env.
+    - 401 en requests → verificar authHeaders y que el token exista.
+    - Datos no aparecen → verificar la función correspondiente.
+
+================================================================================
+7. HOOKS PERSONALIZADOS (hooks/)
+================================================================================
+
+── hooks/useDashboardData.js ──
+  QUÉ HACE:
+    - Carga datos para el Dashboard del admin.
+    - Llama fetchAllActivities + fetchDepartmentsMetadata en paralelo.
+    - Agrupa actividades por departamento.
+    - Calcula semáforo y status de cada tarea.
+    - Incluye tareas atrasadas (pasaron endMonth) que no están "Realizado".
+  
+  RETORNA:
+    - departmentSections: array de { name, coordinator, color, icon, tasks[], totalTasks }
+    - allDeptNames: array de nombres de departamentos
+    - loading, error
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Dashboard vacío → verificar la carga de datos.
+    - Tareas atrasadas no aparecen → verificar el filtro isActiveThisMonth.
+    - Conteos incorrectos → verificar cómo agrupa por departamento.
+
+── hooks/useGanttData.js ──
+  QUÉ HACE:
+    - Carga datos para el Gantt de UN departamento específico.
+    - Llama fetchActivities(departmentName) + fetchDepartmentsMetadata en paralelo.
+    - Extrae categorías y colores del departamento.
+    - Detecta "categorías huérfanas" (en tareas pero no en metadata).
+    - Aplica calculateSemaforo a cada tarea.
+  
+  PARÁMETRO:
+    departmentName — nombre exacto del departamento (ej: "Sistemas")
+  
+  RETORNA:
+    - tasks: array de actividades con semáforo calculado
+    - categories: array de nombres de categorías
+    - categoryColors: { categoryName: hexColor }
+    - departments: todos los departamentos (metadata)
+    - loading, error
+    - refetch(): función para recargar sin spinner
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Gantt vacío → verificar departmentName (debe ser exacto).
+    - Categorías no aparecen → verificar metadata del departamento.
+    - Colores de categorías incorrectos → verificar categoryColors.
+
+── hooks/useGanttCRUD.js ──
+  QUÉ HACE:
+    - Provee operaciones CRUD para los Gantt charts.
+    - Maneja estado de modales de crear/eliminar.
+    - Conecta con TaskContext para crear/eliminar tareas.
+    - Llama refetch() después de cada operación.
+  
+  PARÁMETRO:
+    refetch — función de useGanttData para recargar
+  
+  RETORNA:
+    - isAdmin, canCreate
+    - showCreateModal, setShowCreateModal
+    - deleteTarget, deleteLoading
+    - handleCreate(activityData)
+    - handleDeleteClick(task)
+    - handleDeleteConfirm()
+    - handleDeleteCancel()
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Tarea se crea pero no aparece → verificar que refetch() se llame.
+    - No se puede crear tarea → verificar canCreate (admin o coordinator).
+    - Botón eliminar no funciona → verificar isAdmin.
+
+── hooks/useObservationRead.js ──
+  QUÉ HACE:
+    - Maneja el estado de lectura de observaciones POR USUARIO.
+    - Persiste conteos en Firestore via la API.
+    - Provee contexto global (ObsReadProvider) para que todos los
+      ObservationIndicator reaccionen cuando se marca como leído.
+  
+  PROVIDER: ObsReadProvider({ children })
+    - Carga conteos de lectura al montar (fetchObsReadCounts).
+    - Recarga cuando cambia el token (login/logout).
+    - Provee hasUnread() y markAsRead() a todos los hijos.
+  
+  HOOK: useObservationRead()
+    - Retorna: { hasUnread(activityId, count), markAsRead(activityId, count), loaded }
+    - hasUnread: compara count con el último conteo leído.
+    - markAsRead: actualización optimista + persiste en backend.
+  
+  CUÁNDO BUSCAR BUGS AQUÍ:
+    - Indicador rojo no desaparece → verificar markAsRead.
+    - Indicador no aparece → verificar hasUnread y observationCount.
+    - Conteos no se sincronizan → verificar fetchObsReadCounts.
+
+================================================================================
+8. COMPONENTES (components/)
+================================================================================
+
+── ActivityDetailModal/ActivityDetailModal.jsx ──
+  QUÉ HACE:
+    - Modal que muestra el detalle completo de una actividad.
+    - Muestra observaciones, permite agregar nuevas.
+    - Marca observaciones como leídas al abrir.
+  DÓNDE SE USA: En todos los Gantt charts (botón de ojo/detalle).
+  PROPS: activityId, open, onClose
+
+── AdminDeptTable/AdminDeptTable.jsx ──
+  QUÉ HACE:
+    - Tabla que muestra las tareas de un departamento en formato admin.
+    - Incluye semáforo, estado, desvío, acciones (ver, eliminar).
+    - Usa getDeptStatus y getDeptDetailedStatus del TaskContext.
+  DÓNDE SE USA: Páginas de departamento (Sistemas, Turismo, etc.)
+  PROPS: tasks, departmentName, categories, categoryColors, + CRUD handlers
+
+── AdminExecutiveGrid/AdminExecutiveGrid.jsx ──
+  QUÉ HACE:
+    - Grilla ejecutiva del Dashboard del admin.
+    - Muestra resumen visual de todos los departamentos.
+    - Cada celda muestra tareas con sus colores de estado.
+  DÓNDE SE USA: Dashboard.jsx
+
+── AdminRoute/AdminRoute.jsx ──
+  QUÉ HACE:
+    - Componente wrapper para rutas que solo pueden ver los admins.
+    - Redirige coordinadores a su primer departamento asignado.
+  DÓNDE SE USA: App.jsx (rutas / y /reportes)
+
+── AnimatedCounter/AnimatedCounter.jsx ──
+  QUÉ HACE: Muestra un número con animación de conteo incremental.
+  DÓNDE SE USA: StatusCard, Reportes.
+
+── ComGantt/ComGantt.jsx ──
+  QUÉ HACE:
+    - Gantt chart específico para el departamento de Comunicación y Marketing.
+    - Agrupa tareas por categoría con colores diferentes.
+    - Incluye filtros, semáforo, acciones CRUD.
+  DÓNDE SE USA: Comunicacion.jsx
+
+── ConsumoGantt/ConsumoGantt.jsx ──
+  QUÉ HACE:
+    - Gantt para Consumo.
+    - Usa formato months[] (no startMonth/endMonth).
+  DÓNDE SE USA: Consumo.jsx
+
+── CoordGenGantt/CoordGenGantt.jsx ──
+  QUÉ HACE:
+    - Gantt para Coordinación General.
+    - Similar a AdminDeptTable pero con layout de Gantt.
+  DÓNDE SE USA: CoordGeneral.jsx
+
+── CreateCategoryModal/CreateCategoryModal.jsx ──
+  QUÉ HACE:
+    - Modal para crear una nueva categoría en un departamento.
+    - Envía POST /api/departments/:id/categories.
+  DÓNDE SE USA: Páginas de departamento que tienen categorías.
+  PROPS: open, onClose, departmentId, onCreated
+
+── CreateTaskModal/CreateTaskModal.jsx ──
+  QUÉ HACE:
+    - Modal para crear una nueva tarea/actividad.
+    - Campos: nombre, categoría, mes inicio, mes fin.
+    - VALIDACIONES:
+      - Nombre obligatorio.
+      - Categoría obligatoria.
+      - Mes fin >= Mes inicio (auto-ajusta si se cambia inicio).
+      - Meses pasados deshabilitados en dropdown de fin.
+  DÓNDE SE USA: Todos los Gantt charts.
+  PROPS: open, onClose, onSubmit, department, categories
+
+── CrecGantt/CrecGantt.jsx ──
+  QUÉ HACE: Gantt para Crecimiento.
+  DÓNDE SE USA: Crecimiento.jsx
+
+── DeleteConfirmDialog/DeleteConfirmDialog.jsx ──
+  QUÉ HACE:
+    - Diálogo de confirmación para eliminar una tarea.
+    - Muestra el nombre de la tarea y botones Cancelar/Eliminar.
+  DÓNDE SE USA: Todos los Gantt charts.
+  PROPS: target, onConfirm, onCancel, loading
+
+── DeptRoute/DeptRoute.jsx ──
+  QUÉ HACE:
+    - Componente wrapper para rutas de departamento.
+    - Admin puede ver cualquier departamento.
+    - Coordinador solo puede ver sus departamentos asignados.
+    - Redirige a /login si no hay user o no tiene permisos.
+  DÓNDE SE USA: App.jsx (todas las rutas de departamentos)
+  PROPS: deptKey (nombre del departamento), children
+
+── DeptSection/DeptSection.jsx ──
+  QUÉ HACE:
+    - Sección individual de un departamento en el Dashboard.
+    - Muestra el nombre, coordinador, tareas con semáforo.
+  DÓNDE SE USA: Dashboard.jsx
+
+── FilterBar/FilterBar.jsx ──
+  QUÉ HACE: Barra de filtros con búsqueda, filtro por estado, etc.
+  DÓNDE SE USA: Dashboard.jsx, Reportes.jsx
+
+── FinGantt/FinGantt.jsx ──
+  QUÉ HACE: Gantt para Finanzas (formato startMonth/endMonth sin status).
+  DÓNDE SE USA: Finanzas.jsx
+
+── GanttChart/GanttChart.jsx ──
+  QUÉ HACE:
+    - Gantt chart genérico reutilizable.
+    - Agrupa tareas por categoría.
+    - Muestra barras horizontales por meses.
+    - Incluye semáforo, filtros de categoría, acciones CRUD.
+  DÓNDE SE USA: Sistemas.jsx (y potencialmente otros departamentos simples).
+
+── GestionGantt/GestionGantt.jsx ──
+  QUÉ HACE: Gantt para Gestión de Asociados.
+  DÓNDE SE USA: Gestion.jsx
+
+── Header/Header.jsx ──
+  QUÉ HACE:
+    - Header superior de la página.
+    - Muestra título del departamento, fecha actual, etc.
+  DÓNDE SE USA: Páginas de departamento.
+
+── LoadingSpinner/LoadingSpinner.jsx ──
+  QUÉ HACE: Spinner de carga animado.
+  DÓNDE SE USA: Cualquier componente que tiene estado loading.
+
+── MantGantt/MantGantt.jsx ──
+  QUÉ HACE:
+    - Gantt para Mantenimiento.
+    - Usa formato months[] con frecuencias (Mensual, Bimensual, etc.).
+  DÓNDE SE USA: Mantenimiento.jsx
+
+── NotificationBell/NotificationBell.jsx ──
+  QUÉ HACE:
+    - Campana de notificaciones en el Sidebar.
+    - Muestra badge rojo con conteo de solicitudes pendientes.
+  DÓNDE SE USA: Sidebar.jsx
+
+── ObservationIndicator/ObservationIndicator.jsx ──
+  QUÉ HACE:
+    - Icono que indica si una actividad tiene observaciones no leídas.
+    - Rojo/opaco = no leídas, gris/transparente = leídas.
+    - Usa useObservationRead() para el estado de lectura.
+  DÓNDE SE USA: AdminDeptTable, Gantt charts.
+  PROPS: activityId, observationCount
+
+── ObservationPrompt/ObservationPrompt.jsx ──
+  QUÉ HACE:
+    - Modal que aparece al cambiar status a una tarea.
+    - Muestra estado actual, opciones de nuevo estado, campo de observación.
+    - Observación obligatoria para Atrasado y No Realizado.
+    - Los botones de estado son clicables, el estado actual aparece deshabilitado.
+  DÓNDE SE USA: TaskContext (se renderiza globalmente cuando pendingObservation != null).
+  PROPS: pending, onConfirm, onCancel
+
+── ProtectedRoute/ProtectedRoute.jsx ──
+  QUÉ HACE:
+    - Wrapper para rutas que requieren autenticación.
+    - Si no hay token: redirige a /login.
+    - Si está cargando: muestra spinner.
+  DÓNDE SE USA: App.jsx (envuelve AppLayout)
+
+── SaludGantt/SaludGantt.jsx ──
+  QUÉ HACE: Gantt para Salud y Recreación.
+  DÓNDE SE USA: Salud.jsx
+
+── Sidebar/Sidebar.jsx ──
+  QUÉ HACE:
+    - Barra lateral de navegación de la app.
+    - Links a Dashboard, Reportes, y cada departamento.
+    - Muestra nombre del usuario y botón Cerrar Sesión.
+    - Incluye NotificationBell.
+    - Coordinadores solo ven sus departamentos asignados.
+  DÓNDE SE USA: AppLayout en App.jsx
+
+── StatusBadge/StatusBadge.jsx ──
+  QUÉ HACE: Badge visual del estado con color e icono.
+  DÓNDE SE USA: AdminDeptTable, TaskTable, Gantt charts.
+
+── StatusCard/StatusCard.jsx ──
+  QUÉ HACE:
+    - Tarjeta de resumen de estado (Realizadas, En Curso, Atrasadas).
+    - Muestra conteo animado y es clickable para filtrar.
+  DÓNDE SE USA: Dashboard.jsx (3 tarjetas arriba)
+
+── StatusRequestButton/StatusRequestButton.jsx ──
+  QUÉ HACE:
+    - Botón para que coordinadores soliciten cambio de estado.
+    - Abre formulario con selector de nuevo estado + motivo.
+  DÓNDE SE USA: Gantt charts (solo visible para coordinadores).
+
+── StatusRequestsPanel/StatusRequestsPanel.jsx ──
+  QUÉ HACE:
+    - Panel que muestra solicitudes de cambio de estado pendientes.
+    - Admin puede aprobar o rechazar desde aquí.
+  DÓNDE SE USA: Dashboard.jsx
+
+── TaskTable/TaskTable.jsx ──
+  QUÉ HACE:
+    - Tabla de tareas del Dashboard.
+    - Soporta ordenamiento por columna, búsqueda, filtro por estado.
+    - Muestra semáforo, estado, acciones.
+  DÓNDE SE USA: Dashboard.jsx
+
+── TurismoGantt/TurismoGantt.jsx ──
+  QUÉ HACE: Gantt para Turismo (formato startMonth/endMonth con status).
+  DÓNDE SE USA: Turismo.jsx
+
+================================================================================
+9. PÁGINAS (pages/)
+================================================================================
+
+── pages/Login/Login.jsx ──
+  QUÉ HACE: Pantalla de login. Formulario email + password.
+
+── pages/Dashboard/Dashboard.jsx ──
+  QUÉ HACE:
+    - Panel principal del admin.
+    - Usa useDashboardData() para cargar datos.
+    - Muestra: StatusCards (semáforo resumen), FilterBar, TaskTable,
+      StatusRequestsPanel, AdminExecutiveGrid.
+  REQUIERE: rol admin.
+
+── pages/Reportes/Reportes.jsx ──
+  QUÉ HACE:
+    - Página de reportes ejecutivos.
+    - Estadísticas por departamento, progreso, análisis.
+  REQUIERE: rol admin.
+
+── pages/Sistemas/Sistemas.jsx ──
+  QUÉ HACE: Página del departamento Sistemas. Usa GanttChart + useGanttData("Sistemas").
+
+── pages/Turismo/Turismo.jsx ──
+  QUÉ HACE: Página del departamento Turismo. Usa TurismoGantt + useGanttData("Turismo").
+
+── pages/Comunicacion/Comunicacion.jsx ──
+  QUÉ HACE: Departamento Comunicación. Usa ComGantt + useGanttData("Comunicación y Marketing").
+
+── pages/Salud/Salud.jsx ──
+  QUÉ HACE: Departamento Salud. Usa SaludGantt + useGanttData("Salud y Recreación").
+
+── pages/Mantenimiento/Mantenimiento.jsx ──
+  QUÉ HACE: Departamento Mantenimiento. Usa MantGantt + useGanttData("Mantenimiento").
+
+── pages/Gestion/Gestion.jsx ──
+  QUÉ HACE: Departamento Gestión. Usa GestionGantt + useGanttData("Gestión de Asociados").
+
+── pages/Finanzas/Finanzas.jsx ──
+  QUÉ HACE: Departamento Finanzas. Usa FinGantt + useGanttData("Finanzas").
+
+── pages/Crecimiento/Crecimiento.jsx ──
+  QUÉ HACE: Departamento Crecimiento. Usa CrecGantt + useGanttData("Crecimiento").
+
+── pages/Consumo/Consumo.jsx ──
+  QUÉ HACE: Departamento Consumo. Usa ConsumoGantt + useGanttData("Consumo").
+
+── pages/CoordGeneral/CoordGeneral.jsx ──
+  QUÉ HACE: Coordinación General. Usa CoordGenGantt + useGanttData("Coordinación General").
+
+── pages/ActivityDetail/ActivityDetail.jsx ──
+  QUÉ HACE:
+    - Página de detalle de una actividad individual.
+    - Muestra: datos generales, milestones/hitos, progreso, observaciones.
+    - Permite crear/editar/eliminar milestones, agregar observaciones.
+  RUTA: /actividad/:id
+
+── pages/NotFound/NotFound.jsx ──
+  QUÉ HACE: Página 404.
+
+================================================================================
+10. DATOS LOCALES LEGADOS (data/)
+================================================================================
+
+  ⚠️ TODOS ESTOS ARCHIVOS ESTÁN COMENTADOS.
+  Se mantienen como referencia pero NO se usan.
+  Toda la data viene de la API ahora.
+
+── data/tasksData.js ──        Datos estáticos de tareas (comentado)
+── data/sistemasData.js ──     Datos de Sistemas (comentado)
+── data/turismoData.js ──      Datos de Turismo (comentado)
+── data/comunicacionData.js ── Datos de Comunicación (comentado)
+── data/finanzasData.js ──     Datos de Finanzas (comentado)
+── data/mantenimientoData.js── Datos de Mantenimiento (comentado)
+── data/saludData.js ──        Datos de Salud (comentado)
+── data/gestionData.js ──      Datos de Gestión (comentado)
+── data/crecimientoData.js ──  Datos de Crecimiento (comentado)
+── data/consumoData.js ──      Datos de Consumo (comentado)
+
+================================================================================
+11. FLUJO DEL SEMÁFORO — EXPLICACIÓN COMPLETA
+================================================================================
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CÓMO SE DETERMINA EL ESTADO DE UNA TAREA                  │
+  │                                                             │
+  │  1. ¿Tiene manualStatus en Firestore?                       │
+  │     SÍ → Usa ese status (override manual del admin)         │
+  │     NO → Sigue al paso 2                                    │
+  │                                                             │
+  │  2. calculateSemaforo(task, currentMonth)                    │
+  │     Toma startMonth, endMonth (o months[]) y compara con    │
+  │     new Date().getMonth()                                   │
+  │                                                             │
+  │  3. Resultado: 'green' | 'yellow' | 'red'                  │
+  │                                                             │
+  │  4. Mapeo a status legible:                                 │
+  │     green  → 'Pendiente'  (no ha empezado)                  │
+  │     yellow → 'En Curso'   (estamos dentro del rango)        │
+  │     red    → 'Atrasado'   (ya pasó la fecha fin)            │
+  │                                                             │
+  │  5. Solo el admin puede cambiar manualmente el status       │
+  │     (ej: marcar como 'Realizado' una tarea completada)      │
+  │                                                             │
+  │  6. REGLA AUTO-ATRASADO:                                    │
+  │     Si el auto-calc dice 'red' Y el manual NO es            │
+  │     'Realizado', fuerza 'red' aunque haya un override       │
+  │     (no se puede escapar de Atrasado con override parcial)  │
+  └─────────────────────────────────────────────────────────────┘
+
+  ACTUALIZACIÓN AUTOMÁTICA:
+    - No hay cron job. El cálculo es dinámico.
+    - Cada vez que alguien abre la app, new Date().getMonth() se evalúa.
+    - Si estamos en Marzo, las tareas de Febrero que no fueron marcadas
+      como Realizado automáticamente aparecen como Atrasado.
+
+================================================================================
+12. GUÍA DE DEBUGGING — DÓNDE BUSCAR BUGS
+================================================================================
+
+  PROBLEMA                                → ARCHIVOS A REVISAR
+  ──────────────────────────────────────   ──────────────────────────────────
+  Login no funciona                       → AuthContext.jsx, authController.js
+  Rutas 401/403                           → authMiddleware.js, AuthContext.jsx
+  Tarea no se crea                        → CreateTaskModal.jsx, activityController.js, api.js
+  Tarea no aparece                        → useGanttData.js, activityController.js (caché)
+  Status incorrecto en tabla              → TaskContext.jsx (getDeptDetailedStatus)
+  Status incorrecto en modal              → TaskContext.jsx (cycleDeptStatus, ~línea 297)
+  Color incorrecto                        → TaskContext.jsx (DEPT_SEMAFORO_COLORS)
+  Label incorrecto                        → TaskContext.jsx (DEPT_SEMAFORO_LABELS)
+  Semáforo mal calculado                  → semaforoUtils.js (calculateSemaforo)
+  Observaciones no se guardan             → api.js (addObservation), activityController.js
+  Indicador rojo no desaparece            → useObservationRead.js, ObservationIndicator.jsx
+  Categorías no aparecen                  → departmentController.js, useGanttData.js
+  Hitos/milestones no funcionan           → milestoneController.js, ActivityDetail.jsx
+  Solicitud de estado no se procesa       → statusRequestController.js, StatusRequestsPanel.jsx
+  Datos desactualizados                   → Caché del backend (60s actividades, 10min deptos)
+  Sidebar no muestra departamento         → Sidebar.jsx, DeptRoute.jsx
+  Dashboard vacío                         → useDashboardData.js
+
+════════════════════════════════════════════════════════════════════════════════
+  FIN DE LA DOCUMENTACIÓN DEL FRONTEND
+════════════════════════════════════════════════════════════════════════════════

@@ -6,6 +6,8 @@
 /* ── Table wrapper ── */
 .aeg__wrapper {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 75vh;
     background: white;
     border-radius: 14px;
     border: 1px solid #e2e8f0;
@@ -34,7 +36,7 @@
     min-width: 780px;
 }
 
-/* ── Header ── */
+/* ── Header (sticky — se queda fijo al hacer scroll) ── */
 .aeg__th {
     text-align: left;
     padding: 12px 16px;
@@ -47,6 +49,9 @@
     border-bottom: 2px solid #e2e8f0;
     white-space: nowrap;
     user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .aeg__th--num {
