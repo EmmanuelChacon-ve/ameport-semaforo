@@ -48,6 +48,15 @@ export const STATUS_CONFIG = {
   },
 };
 
+/* ── Ordered filter list for department Gantt views ── */
+export const DETAILED_STATUS_FILTERS = [
+  STATUS.REALIZADO,
+  STATUS.EN_CURSO,
+  STATUS.PENDIENTE,
+  STATUS.ATRASADO,
+  STATUS.NO_REALIZADO,
+];
+
 /* ── Current month helpers ── */
 const CURRENT_MONTH = new Date().getMonth();
 

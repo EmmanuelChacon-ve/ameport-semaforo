@@ -1,6 +1,6 @@
 import { useState, useMemo, Fragment, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { monthNames, statusLabels, semaforoColors } from '../../utils/semaforoUtils';
+import { monthNames, statusLabels, semaforoColors, STATUS_CONFIG, DETAILED_STATUS_FILTERS } from '../../utils/semaforoUtils';
 import useGanttData from '../../hooks/useGanttData';
 import useGanttCRUD from '../../hooks/useGanttCRUD';
 import { useTasks } from '../../context/TaskContext';
@@ -42,13 +42,18 @@ export default function GanttChart() {
     } = useGanttCRUD(refetch);
 
     const tasksWithStatus = useMemo(
-        () => tasksRaw.map((t) => ({ ...t, status: getDeptStatus(t.id, t.semaforo) })),
-        [tasksRaw, getDeptStatus]
+        () => tasksRaw.map((t) => ({
+            ...t,
+            status: getDeptStatus(t.id, t.semaforo),
+            detailedStatus: getDeptDetailedStatus(t.id, t.semaforo),
+        })),
+        [tasksRaw, getDeptStatus, getDeptDetailedStatus]
     );
 
     const semaforoCounts = useMemo(() => {
-        const c = { green: 0, yellow: 0, red: 0 };
-        tasksWithStatus.forEach((t) => c[t.status]++);
+        const c = {};
+        DETAILED_STATUS_FILTERS.forEach((s) => (c[s] = 0));
+        tasksWithStatus.forEach((t) => { if (c[t.detailedStatus] !== undefined) c[t.detailedStatus]++; });
         return c;
     }, [tasksWithStatus]);
 
@@ -65,7 +70,7 @@ export default function GanttChart() {
 
     const filtered = useMemo(() => {
         let r = tasksWithStatus;
-        if (semaforoFilter) r = r.filter((t) => t.status === semaforoFilter);
+        if (semaforoFilter) r = r.filter((t) => t.detailedStatus === semaforoFilter);
         if (categoryFilter) r = r.filter((t) => t.category === categoryFilter);
         if (unreadFilter) r = r.filter((t) => (t.observations?.length || 0) > 0 && hasUnread(t.id, t.observations.length));
         return r;
@@ -101,18 +106,18 @@ export default function GanttChart() {
                         <span className="gantt__filter-label">Semáforo:</span>
                     </div>
                     <div className="gantt__filter-buttons">
-                        {['green', 'yellow', 'red'].map((status) => (
+                        {DETAILED_STATUS_FILTERS.map((status) => (
                             <button
                                 key={status}
                                 className={`gantt__filter-btn ${semaforoFilter === status ? 'gantt__filter-btn--active' : ''}`}
                                 style={{
-                                    '--filter-color': statusColors[status],
-                                    '--filter-bg': `${statusColors[status]}18`,
+                                    '--filter-color': STATUS_CONFIG[status].color,
+                                    '--filter-bg': `${STATUS_CONFIG[status].color}18`,
                                 }}
                                 onClick={() => toggleSemaforo(status)}
                             >
                                 <span className="gantt__filter-dot" />
-                                <span>{statusLabels[status]}</span>
+                                <span>{STATUS_CONFIG[status].label}</span>
                                 <span className="gantt__filter-count">{semaforoCounts[status]}</span>
                             </button>
                         ))}

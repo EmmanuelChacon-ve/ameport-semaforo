@@ -1,6 +1,6 @@
 import { useState, useMemo, Fragment, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { monthNames, statusLabels, semaforoColors } from '../../utils/semaforoUtils';
+import { monthNames, statusLabels, semaforoColors, STATUS_CONFIG, DETAILED_STATUS_FILTERS } from '../../utils/semaforoUtils';
 import useGanttData from '../../hooks/useGanttData';
 import useGanttCRUD from '../../hooks/useGanttCRUD';
 import { useTasks } from '../../context/TaskContext';
@@ -47,10 +47,11 @@ export default function FinGantt() {
     } = useGanttCRUD(refetch);
 
     const semaforoCounts = useMemo(() => {
-        const c = { green: 0, yellow: 0, red: 0 };
-        tasksWithStatus.forEach((t) => { const s = getDeptStatus(t.id, t.semaforo); if (c[s] !== undefined) c[s]++; });
+        const c = {};
+        DETAILED_STATUS_FILTERS.forEach((s) => (c[s] = 0));
+        tasksWithStatus.forEach((t) => { const s = getDeptDetailedStatus(t.id, t.semaforo); if (c[s] !== undefined) c[s]++; });
         return c;
-    }, [tasksWithStatus, getDeptStatus]);
+    }, [tasksWithStatus, getDeptDetailedStatus]);
 
     const categoryCounts = useMemo(() => {
         const c = {};
@@ -65,7 +66,7 @@ export default function FinGantt() {
 
     const filtered = useMemo(() => {
         let r = tasksWithStatus;
-        if (semaforoFilter) r = r.filter((t) => getDeptStatus(t.id, t.semaforo) === semaforoFilter);
+        if (semaforoFilter) r = r.filter((t) => getDeptDetailedStatus(t.id, t.semaforo) === semaforoFilter);
         if (categoryFilter) r = r.filter((t) => t.category === categoryFilter);
         if (unreadFilter) r = r.filter((t) => (t.observations?.length || 0) > 0 && hasUnread(t.id, t.observations.length));
         return r;
@@ -114,11 +115,11 @@ export default function FinGantt() {
                 <div className="fgantt__filters-row">
                     <div className="fgantt__filters-left"><FiFilter className="fgantt__filter-icon" /><span className="fgantt__filter-label">Semáforo:</span></div>
                     <div className="fgantt__filter-buttons">
-                        {['green', 'yellow', 'red'].map((s) => (
+                        {DETAILED_STATUS_FILTERS.map((s) => (
                             <button key={s} className={`fgantt__filter-btn ${semaforoFilter === s ? 'fgantt__filter-btn--active' : ''}`}
-                                style={{ '--f-color': semaforoColors[s], '--f-bg': `${semaforoColors[s]}18` }}
+                                style={{ '--f-color': STATUS_CONFIG[s].color, '--f-bg': `${STATUS_CONFIG[s].color}18` }}
                                 onClick={() => setSemaforoFilter(semaforoFilter === s ? null : s)}>
-                                <span className="fgantt__filter-dot" /><span>{statusLabels[s]}</span>
+                                <span className="fgantt__filter-dot" /><span>{STATUS_CONFIG[s].label}</span>
                                 <span className="fgantt__filter-count">{semaforoCounts[s]}</span>
                             </button>
                         ))}
