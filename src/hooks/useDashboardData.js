@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { fetchAllActivities, fetchDepartmentsMetadata } from '../services/api';
 import { calculateSemaforo, semaforoToStatus, isActiveThisMonth } from '../utils/semaforoUtils';
 
+/* ── Map manualStatus → semáforo color ── */
+const MANUAL_STATUS_TO_SEM = {
+  'Realizado': 'green',
+  'En Curso': 'yellow',
+  'Pendiente': 'green',
+  'Atrasado': 'red',
+  'No Realizado': 'red',
+};
+
 /**
  * Hook that builds `departmentSections` from the backend API,
  * mirroring the structure that was previously built statically
@@ -30,6 +39,16 @@ export default function useDashboardData() {
         ]);
 
         if (cancelled) return;
+
+        // Build global manualStatus overrides map from ALL activities
+        // so every task's effective semaforo is correct from the start,
+        // without waiting for TaskContext to load from localStorage.
+        const manualOverrides = {};
+        activities.forEach((act) => {
+          if (act.manualStatus) {
+            manualOverrides[act.id] = act.manualStatus;
+          }
+        });
 
         // Group activities by department name
         const activitiesByDept = {};
@@ -61,7 +80,20 @@ export default function useDashboardData() {
               return false;
             })
             .map((task) => {
-              const semaforo = calculateSemaforo(task, CURRENT_MONTH);
+              const autoSemaforo = calculateSemaforo(task, CURRENT_MONTH);
+
+              // Apply manualStatus override directly from API data
+              // This mirrors getDeptStatus logic from TaskContext, but
+              // doesn't depend on localStorage/deptOverrides being ready.
+              let semaforo = autoSemaforo;
+              const override = manualOverrides[task.id];
+              if (override) {
+                if (autoSemaforo === 'red' && override !== 'Realizado') {
+                  semaforo = 'red'; // Keep red if overdue and not completed
+                } else {
+                  semaforo = MANUAL_STATUS_TO_SEM[override] || autoSemaforo;
+                }
+              }
               // Derive startMonth/endMonth from months[] for Mantenimiento/Consumo
               let { startMonth, endMonth } = task;
               if ((startMonth == null || endMonth == null) && Array.isArray(task.months) && task.months.length > 0) {
