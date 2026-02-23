@@ -10,6 +10,7 @@
     z-index: 1000;
     animation: ctmFadeIn 0.2s ease;
     padding: 1rem;
+    overflow-y: auto;
 }
 
 @keyframes ctmFadeIn {

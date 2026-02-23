@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiPlus, FiLoader, FiCheck } from 'react-icons/fi';
 import { fetchDepartmentsMetadata, addDepartmentCategory } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -76,6 +77,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
             });
         }
     }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Lock body scroll while modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -162,7 +173,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
         }
     };
 
-    return (
+    return createPortal(
         <div className="ctm-overlay" onClick={onClose}>
             <div className="ctm-modal" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
@@ -352,6 +363,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, fixedDepart
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
