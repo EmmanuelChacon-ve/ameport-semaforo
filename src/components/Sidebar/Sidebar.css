@@ -395,6 +395,27 @@
     .sidebar:not(.sidebar--mobile-open) .sidebar__toggle {
         display: none;
     }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__user-info {
+        display: none;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__logout span {
+        display: none;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__logout {
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__footer {
+        padding: 8px;
+    }
+
+    .sidebar:not(.sidebar--mobile-open) .sidebar__header-actions .notification-bell {
+        display: none;
+    }
 }
 
 @media (max-width: 768px) {
