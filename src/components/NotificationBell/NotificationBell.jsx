@@ -1,15 +1,22 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { FiBell, FiAlertTriangle, FiMessageSquare, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
+import {
+    FiBell, FiAlertTriangle, FiMessageSquare, FiRefreshCw,
+    FiCheckCircle, FiXCircle, FiPlus, FiFolder, FiFlag,
+    FiCheck, FiTrash2,
+} from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
-import { useTasks } from '../../context/TaskContext';
-import { fetchAllActivities, fetchStatusRequests } from '../../services/api';
-import useObservationRead from '../../hooks/useObservationRead';
+import {
+    fetchNotifications, markNotificationRead, markAllNotificationsRead,
+    deleteNotification, deleteAllNotifications,
+} from '../../services/api';
 import './NotificationBell.css';
 
 /* ── Department → route mapping ── */
 const DEPT_ROUTES = {
+    'Presidencia': '/presidencia',
+    'Coordinación General': '/coordinacion-general',
     'Sistemas': '/sistemas',
     'Turismo': '/turismo',
     'Salud y Recreación': '/salud',
@@ -21,111 +28,68 @@ const DEPT_ROUTES = {
     'Consumo': '/consumo',
 };
 
-const DISMISSED_KEY = 'notif_dismissed';
+/* ── Type → icon/color mapping ── */
+const TYPE_CONFIG = {
+    new_activity: { icon: <FiPlus />, color: '#22c55e' },
+    activity_updated: { icon: <FiRefreshCw />, color: '#f59e0b' },
+    activity_deleted: { icon: <FiXCircle />, color: '#ef4444' },
+    new_category: { icon: <FiFolder />, color: '#8b5cf6' },
+    new_observation: { icon: <FiMessageSquare />, color: '#3b82f6' },
+    new_milestone: { icon: <FiFlag />, color: '#f59e0b' },
+    milestone_toggle: { icon: <FiCheck />, color: '#14b8a6' },
+    milestone_comment: { icon: <FiMessageSquare />, color: '#6366f1' },
+    milestone_deleted: { icon: <FiTrash2 />, color: '#ef4444' },
+    status_request: { icon: <FiRefreshCw />, color: '#8b5cf6' },
+    status_approved: { icon: <FiCheckCircle />, color: '#22c55e' },
+    status_rejected: { icon: <FiXCircle />, color: '#ef4444' },
+};
 
-function loadDismissed() {
-    try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]'); } catch { return []; }
+/* ── Relative time helper ── */
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Ahora';
+    if (mins < 60) return `Hace ${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `Hace ${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `Hace ${days}d`;
+    return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
 export default function NotificationBell() {
-    const { user, token } = useAuth();
-    const isAdmin = user?.role === 'admin';
-
-    // Only render for admins
-    if (!isAdmin) return null;
-
-    return <NotificationBellInner token={token} />;
-}
-
-function NotificationBellInner({ token }) {
+    const { token } = useAuth();
     const [open, setOpen] = useState(false);
-    const [activities, setActivities] = useState([]);
-    const [pendingRequests, setPendingRequests] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
-    const [dismissedIds, setDismissedIds] = useState(loadDismissed);
     const bellRef = useRef(null);
     const panelRef = useRef(null);
     const navigate = useNavigate();
-    const { getDeptStatus } = useTasks();
-    const { hasUnread } = useObservationRead();
 
-    /* ── Fetch data ── */
-    const loadData = useCallback(async () => {
+    /* ── Fetch notifications from backend ── */
+    const loadNotifications = useCallback(async () => {
         if (!token) return;
         try {
-            const [acts, reqs] = await Promise.all([
-                fetchAllActivities(),
-                fetchStatusRequests('pending'),
-            ]);
-            setActivities(acts);
-            setPendingRequests(reqs);
+            const data = await fetchNotifications();
+            setNotifications(data);
         } catch (err) {
             console.error('NotificationBell: fetch error', err);
         }
     }, [token]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
-    // Refresh every 60s
+    // Refresh every 30s
     useEffect(() => {
-        const id = setInterval(loadData, 60000);
+        const id = setInterval(loadNotifications, 30000);
         return () => clearInterval(id);
-    }, [loadData]);
+    }, [loadNotifications]);
 
-    /* ── Build notifications (excluding dismissed) ── */
-    const notifications = useMemo(() => {
-        const items = [];
+    /* ── Unread count ── */
+    const unreadCount = notifications.filter((n) => !n.read).length;
 
-        // 1. Pending status change requests
-        pendingRequests.forEach((r) => {
-            items.push({
-                id: `sr-${r.id}`,
-                type: 'request',
-                icon: <FiRefreshCw />,
-                text: `Solicitud de cambio: "${r.activityName || 'Actividad'}"`,
-                sub: `${r.requestedByName || 'Coordinador'} → ${r.requestedStatus}`,
-                dept: r.department,
-                color: '#8B5CF6',
-            });
-        });
-
-        // 2. Delayed activities
-        activities.forEach((act) => {
-            const eff = getDeptStatus(act.id, act.sempioro || act.semaforo);
-            if (eff === 'red') {
-                items.push({
-                    id: `delayed-${act.id}`,
-                    type: 'delayed',
-                    icon: <FiAlertTriangle />,
-                    text: `"${act.name}" está atrasada`,
-                    sub: act.department,
-                    dept: act.department,
-                    color: '#EF4444',
-                });
-            }
-        });
-
-        // 3. Unread observations
-        activities.forEach((act) => {
-            const obsCount = act.observations?.length || 0;
-            if (obsCount > 0 && hasUnread(act.id, obsCount)) {
-                items.push({
-                    id: `obs-${act.id}`,
-                    type: 'observation',
-                    icon: <FiMessageSquare />,
-                    text: `Nueva observación en "${act.name}"`,
-                    sub: act.department,
-                    dept: act.department,
-                    color: '#3B82F6',
-                });
-            }
-        });
-
-        // Filter out dismissed notifications
-        return items.filter((n) => !dismissedIds.includes(n.id));
-    }, [pendingRequests, activities, getDeptStatus, hasUnread, dismissedIds]);
-
-    /* ── Position panel next to bell button ── */
+    /* ── Position panel ── */
     const toggleOpen = () => {
         if (!open && bellRef.current) {
             const rect = bellRef.current.getBoundingClientRect();
@@ -137,21 +101,54 @@ function NotificationBellInner({ token }) {
         setOpen(!open);
     };
 
-    /* ── Dismiss all notifications ── */
-    const dismissAll = () => {
-        const allIds = notifications.map((n) => n.id);
-        const newDismissed = [...new Set([...dismissedIds, ...allIds])];
-        setDismissedIds(newDismissed);
-        try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(newDismissed)); } catch { /* noop */ }
+    /* ── Mark all as read ── */
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllNotificationsRead();
+            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        } catch (err) {
+            console.error('Error marking all as read:', err);
+        }
+    };
+
+    /* ── Click on notification ── */
+    const handleClick = async (notif) => {
+        // Mark as read
+        if (!notif.read) {
+            try {
+                await markNotificationRead(notif.id);
+                setNotifications((prev) =>
+                    prev.map((n) => n.id === notif.id ? { ...n, read: true } : n)
+                );
+            } catch (err) {
+                console.error('Error marking notification:', err);
+            }
+        }
+        // Navigate to department
+        const route = DEPT_ROUTES[notif.department];
+        if (route) navigate(route);
         setOpen(false);
     };
 
-    /* ── Dismiss single notification ── */
-    const dismissOne = (e, notifId) => {
+    /* ── Delete single notification ── */
+    const handleDeleteOne = async (e, notifId) => {
         e.stopPropagation();
-        const newDismissed = [...dismissedIds, notifId];
-        setDismissedIds(newDismissed);
-        try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(newDismissed)); } catch { /* noop */ }
+        try {
+            await deleteNotification(notifId);
+            setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+        } catch (err) {
+            console.error('Error deleting notification:', err);
+        }
+    };
+
+    /* ── Delete all notifications ── */
+    const handleDeleteAll = async () => {
+        try {
+            await deleteAllNotifications();
+            setNotifications([]);
+        } catch (err) {
+            console.error('Error deleting all:', err);
+        }
     };
 
     /* ── Click outside to close ── */
@@ -168,14 +165,6 @@ function NotificationBellInner({ token }) {
         return () => document.removeEventListener('mousedown', handler);
     }, [open]);
 
-    const handleClick = (notif) => {
-        const route = DEPT_ROUTES[notif.dept];
-        if (route) navigate(route);
-        setOpen(false);
-    };
-
-    const count = notifications.length;
-
     const panel = open ? createPortal(
         <>
             <div className="notif-bell__backdrop" onClick={() => setOpen(false)} />
@@ -186,42 +175,56 @@ function NotificationBellInner({ token }) {
             >
                 <div className="notif-bell__header">
                     <span className="notif-bell__title">Notificaciones</span>
-                    {count > 0 && (
-                        <button className="notif-bell__clear-btn" onClick={dismissAll} title="Limpiar todas">
-                            <FiTrash2 /> Limpiar
-                        </button>
-                    )}
+                    <div className="notif-bell__header-btns">
+                        {unreadCount > 0 && (
+                            <button className="notif-bell__read-btn" onClick={handleMarkAllRead} title="Marcar todas como leídas">
+                                <FiCheckCircle /> Leer
+                            </button>
+                        )}
+                        {notifications.length > 0 && (
+                            <button className="notif-bell__clear-btn" onClick={handleDeleteAll} title="Eliminar todas">
+                                <FiTrash2 /> Limpiar
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="notif-bell__list">
-                    {count === 0 ? (
+                    {notifications.length === 0 ? (
                         <div className="notif-bell__empty">
                             <span>🎉</span>
                             <p>Sin notificaciones</p>
                         </div>
                     ) : (
-                        notifications.map((n) => (
-                            <div key={n.id} className="notif-bell__item-row">
-                                <button
-                                    className="notif-bell__item"
-                                    onClick={() => handleClick(n)}
-                                >
-                                    <span className="notif-bell__item-icon" style={{ color: n.color, background: `${n.color}15` }}>
-                                        {n.icon}
-                                    </span>
-                                    <div className="notif-bell__item-body">
-                                        <span className="notif-bell__item-text">{n.text}</span>
-                                        <span className="notif-bell__item-sub">{n.sub}</span>
-                                    </div>
-                                </button>
-                                <button
-                                    className="notif-bell__dismiss-btn"
-                                    onClick={(e) => dismissOne(e, n.id)}
-                                    title="Descartar"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ))
+                        notifications.map((n) => {
+                            const config = TYPE_CONFIG[n.type] || { icon: <FiBell />, color: '#64748b' };
+                            return (
+                                <div key={n.id} className={`notif-bell__item-row ${!n.read ? 'notif-bell__item-row--unread' : ''}`}>
+                                    <button
+                                        className="notif-bell__item"
+                                        onClick={() => handleClick(n)}
+                                    >
+                                        <span className="notif-bell__item-icon" style={{ color: config.color, background: `${config.color}15` }}>
+                                            {config.icon}
+                                        </span>
+                                        <div className="notif-bell__item-body">
+                                            <span className="notif-bell__item-text">{n.message}</span>
+                                            <div className="notif-bell__item-meta">
+                                                {n.department && <span className="notif-bell__item-dept">{n.department}</span>}
+                                                <span className="notif-bell__item-time">{timeAgo(n.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                        {!n.read && <span className="notif-bell__unread-dot" />}
+                                    </button>
+                                    <button
+                                        className="notif-bell__dismiss-btn"
+                                        onClick={(e) => handleDeleteOne(e, n.id)}
+                                        title="Eliminar"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             </div>
@@ -238,8 +241,8 @@ function NotificationBellInner({ token }) {
                 aria-label="Notificaciones"
             >
                 <FiBell />
-                {count > 0 && (
-                    <span className="notif-bell__badge">{count > 99 ? '99+' : count}</span>
+                {unreadCount > 0 && (
+                    <span className="notif-bell__badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
                 )}
             </button>
             {panel}

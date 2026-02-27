@@ -496,3 +496,54 @@ export async function addMilestoneComment(activityId, milestoneId, text) {
   if (!data.success) throw new Error(data.message || 'Error al agregar comentario');
   return data;
 }
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+
+export async function fetchNotifications() {
+  const res = await fetch(`${API_URL}/notifications`, { headers: authHeaders() });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Error al obtener notificaciones');
+  return data.notifications;
+}
+
+export async function markNotificationRead(id) {
+  const res = await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Error al marcar notificación');
+  return data;
+}
+
+export async function markAllNotificationsRead() {
+  const res = await fetch(`${API_URL}/notifications/read-all`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Error al marcar notificaciones');
+  return data;
+}
+
+export async function deleteNotification(id) {
+  const res = await fetch(`${API_URL}/notifications/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Error al eliminar notificación');
+  return data;
+}
+
+export async function deleteAllNotifications() {
+  const res = await fetch(`${API_URL}/notifications`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Error al eliminar notificaciones');
+  return data;
+}
