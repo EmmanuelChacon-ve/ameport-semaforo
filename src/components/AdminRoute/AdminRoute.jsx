@@ -6,7 +6,6 @@ import { useAuth } from '../../context/AuthContext';
  * Se usa para redirigir coordinadores a su primer departamento.
  */
 const deptRouteMap = {
-    'Presidencia': '/presidencia',
     'Coordinación General': '/coordinacion-general',
     'Sistemas': '/sistemas',
     'Turismo': '/turismo',
